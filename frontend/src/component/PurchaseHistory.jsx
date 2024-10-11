@@ -37,7 +37,6 @@ function PurchaseHistory() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -55,7 +54,6 @@ function PurchaseHistory() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.quantity}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.status}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.date}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.rating}</td>
                         </tr>
                     ))}
                 </tbody>

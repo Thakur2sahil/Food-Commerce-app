@@ -27,32 +27,38 @@ function OrderRequest() {
         }, {});
     };
 
-    const acept = async(orderId) =>{
-      
-        
+    const acept = async(orderId) =>{ 
         try {
-            
-            const res = await axios.post('http://localhost:8004/accept',{orderId})
-            console.log(res)
-            toast.success(`${orderId} is accepted`)
-            fetchData();
+            const res = await axios.post('http://localhost:8004/accept', { orderId });
+            console.log(res);
+            toast.success(`${orderId} is accepted`);
+    
+            // Update the orders state directly if needed
+            setOrders((prevOrders) => prevOrders.filter(order => order.order_id !== orderId));
+    
+            // Or refetch data
+            fetchData(); // This should still work if your backend is set up correctly
         } catch (error) {
-            console.error(error)
+            console.error(error);
         }
-    }
-
-    const cancel = async(orderId) =>{
+    };
+    
+    const cancel = async(orderId) => {
         try {
-            
-            const res = await axios.post('http://localhost:8004/cancel',{orderId})
-            console.log(res)
-            toast.success(`${orderId} is Deleted`)
-            fetchData();
+            const res = await axios.post('http://localhost:8004/cancel', { orderId });
+            console.log(res);
+            toast.success(`${orderId} is canceled`);
+    
+            // Update the orders state directly if needed
+            setOrders((prevOrders) => prevOrders.filter(order => order.order_id !== orderId));
+    
+            // Or refetch data
+            fetchData(); // This should still work if your backend is set up correctly
         } catch (error) {
-            console.error(error)
+            console.error(error);
         }
-
-    }
+    };
+    
 
     const groupedOrders = groupOrdersById(orders);
 

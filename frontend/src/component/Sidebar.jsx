@@ -14,9 +14,9 @@ function Sidebar() {
 
                 {/* Sidebar Navigation Links */}
                 <nav className="space-y-6 w-full">
-                    <Link to="/admin" className="block text-lg hover:bg-gray-700 px-4 py-2 transition duration-200">
+                    {/* <Link to="/admin/adminhome" className="block text-lg hover:bg-gray-700 px-4 py-2 transition duration-200">
                         <h2>Home</h2>
-                    </Link>
+                    </Link> */}
 
                     <Link to="/admin/newproduct" className="block text-lg hover:bg-gray-700 px-4 py-2 transition duration-200">
                         <h2>Create New Product</h2>

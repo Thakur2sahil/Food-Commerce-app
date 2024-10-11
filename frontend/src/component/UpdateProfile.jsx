@@ -1,65 +1,67 @@
-import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { ToastContainer, toast } from 'react-toastify'; // Importing toast functions
+import 'react-toastify/dist/ReactToastify.css'; // Import toast styles
 
 function UpdateProfile() {
-    const [username, setUsername] = useState('')
-    const [email, setEmail] = useState('')
-    const [file, setFile] = useState(null)
-    const [id, setId] = useState(0)
+    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
+    const [file, setFile] = useState(null);
+    const [id, setId] = useState(0);
 
     // Fetch profile data from the server
     const fetchData = async () => {
-        const userId = localStorage.getItem('userid')
+        const userId = localStorage.getItem('userid');
 
         try {
-            const res = await axios.post('http://localhost:8004/profile', { userId })
+            const res = await axios.post('http://localhost:8004/profile', { userId });
             if (res.data && res.data.length > 0) {
-                const profile = res.data[0]
-                setUsername(profile.username)
-                setEmail(profile.email)
-                setId(profile.id)
+                const profile = res.data[0];
+                setUsername(profile.username);
+                setEmail(profile.email);
+                setId(profile.id);
             } else {
-                console.log("No data available")
+                console.log("No data available");
             }
         } catch (error) {
-            console.error("Error fetching data:", error)
-            alert(`Error: ${error.response?.data?.message || "Unable to connect to the database"}`)
+            console.error("Error fetching data:", error);
+            toast.error(`Error: ${error.response?.data?.message || "Unable to connect to the database"}`); // Using toast for error
         }
-    }
+    };
 
     // Handle form submission for updating profile
     const handleSubmit = async (e) => {
-        e.preventDefault()
+        e.preventDefault();
 
-        const userId = localStorage.getItem('userid')
-        const formData = new FormData()
+        const userId = localStorage.getItem('userid');
+        const formData = new FormData();
 
-        formData.append('userid', userId) // Sending userid in FormData
-        formData.append('username', username) // Correct field name
-        formData.append('email', email) // Correct field name
+        formData.append('userid', userId); // Sending userid in FormData
+        formData.append('username', username); // Correct field name
+        formData.append('email', email); // Correct field name
         if (file) {
-            formData.append('file', file)
+            formData.append('file', file);
         }
 
         try {
             const res = await axios.post('http://localhost:8004/updateprofile', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
-            })
-            console.log(res.data)
+            });
+            console.log(res.data);
             if (res.data.error) {
-                alert(res.data.error)
+                toast.error(res.data.error); // Using toast for error
             } else {
-                alert('Profile updated successfully!')
+                toast.success('Profile updated successfully!'); // Using toast for success
             }
         } catch (err) {
-            console.error(err)
-            alert("Unable to update profile")
+            console.error(err);
+            toast.error("Unable to update profile"); // Using toast for error
         }
-    }
+    };
 
     useEffect(() => {
-        fetchData()
-    }, [])
+        fetchData();
+    }, []);
 
     return (
         <div className="max-w-2xl mx-auto p-6 bg-gray-100 rounded-lg shadow-md mt-10">
@@ -100,8 +102,9 @@ function UpdateProfile() {
                     </button>
                 </div>
             </form>
+            <ToastContainer position="top-right" autoClose={1000} hideProgressBar={false} closeOnClick={true} pauseOnHover={true} draggable={true} /> {/* Toast container */}
         </div>
-    )
+    );
 }
 
-export default UpdateProfile
+export default UpdateProfile;

@@ -5,6 +5,7 @@ const multer = require('multer')
 const jwt = require('jsonwebtoken');
 const secretKey = 'your_secret_key';
 const nodemailer = require('nodemailer');
+const { sendEmail } = require('./emailService');
 const fs = require('fs')
 
 
@@ -44,35 +45,7 @@ const upload = multer({storage})
 
 
 
-// Create a transporter object using the default SMTP transport
-const transporter = nodemailer.createTransport({
-    service: 'gmail', // Use a service (e.g., Gmail)
-    auth: {
-        user: 'sahilthakur14691@gmail.com', // Your email
-        pass: 'gvfe xpha dmuz iuuo' // Your email password or app-specific password
-    }
-});
-
-// Function to send a registration confirmation email
-const sendRegistrationEmail = (email, name) => {
-    const mailOptions = {
-        from: 'sahilthakur14691@gmail.com', // Sender's email
-        to: email, // Recipient's email
-        subject: 'Registration Successful',
-        text: `Hello ${name},\n\nThank you for registering! We're glad to have you with us.\n\nBest regards,\nYour Company Name`
-    };
-
-    // Send the email
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            return console.log('Error sending email:', error);
-        }
-        console.log('Email sent: ' + info.response);
-    });
-};
-
-
-app.post('/signup', upload.single('image'), (req, res) => {
+app.post('/signup', upload.single('image'), async(req, res) => {
     const imgpath = `uploads/${req.file.filename.replace(/\\/g, "/")}`;
     const { name, user, email, password, role } = req.body;
 
@@ -99,7 +72,7 @@ app.post('/signup', upload.single('image'), (req, res) => {
         // Insert the user data if the email and username do not exist
         const insert = 'INSERT INTO sahil.users (full_name, username, email, password, role, image) VALUES($1, $2, $3, $4, $5, $6) RETURNING *';
 
-        db.query(insert, [name, user, email, password, role, imgpath], (err, data) => {
+        db.query(insert, [name, user, email, password, role, imgpath], async(err, data) => {
             if (err) {
                 console.error('Database error:', err);
                 return res.status(500).json({ error: 'Database insertion error' });
@@ -118,7 +91,14 @@ app.post('/signup', upload.single('image'), (req, res) => {
             const token = jwt.sign(payload, secretKey, { expiresIn: '1h' });
 
             // Send registration confirmation email
-            sendRegistrationEmail(email, name); // Call the email function here
+           
+
+          await sendEmail(
+        email,
+        'Registration Details',
+        `Hello ${name},<br><br>You have successfully registered with the following details`
+      );
+// Call the email function here
 
             res.json({
                 success: 'User registered successfully',
@@ -206,26 +186,22 @@ app.get('/ourproduct', (req, res) => {
 });
 
 
-app.get('/card',(req,res)=>{
-    
-    const select = 'select * from sahil.products'
+app.get('/card', (req, res) => {
+    const select = 'SELECT id, name, description, price, category, photo, rating FROM sahil.products'; // Ensure rating is included
              
-    db.query(select,(err,data)=>{
-        if(err)
-        {
-            console.error({err:"Database Error"})
-            return res.status(400).json("Error due to databse")
+    db.query(select, (err, data) => {
+        if (err) {
+            console.error({ err: "Database Error" });
+            return res.status(400).json("Error due to database");
         }
 
-        if(data.rows.length>0)
-        {
-            return res.json(data.rows)
+        if (data.rows.length > 0) {
+            return res.json(data.rows);
+        } else {
+            return res.json({ err: "No data found" });
         }
-        else{
-            return res.json({err:"No data found"})
-        }
-    })
-})
+    });
+});
 
 
 app.get('/updateproduct', (req, res) => {
@@ -339,17 +315,22 @@ app.post('/cart/decrement', (req, res) => {
             const newQuantity = data.rows[0].quantity;
 
             if (newQuantity === 0) {
-                // If the quantity is 0, delete the product from the cart
-                const deleteQuery = `DELETE FROM sahil.cart WHERE user_id = $1 AND product_id = $2`;
-                db.query(deleteQuery, [userId, productId], (deleteErr) => {
-                    if (deleteErr) {
-                        console.error('Error deleting product:', deleteErr);
-                        return res.status(500).json({ error: 'Error deleting product from cart' });
+                // If quantity becomes 0, remove the product from the cart
+                const deleteQuery = `
+                    DELETE FROM sahil.cart
+                    WHERE user_id = $1 AND product_id = $2;
+                `;
+
+                db.query(deleteQuery, [userId, productId], (err, result) => {
+                    if (err) {
+                        console.error('Database error:', err);
+                        return res.status(500).json({ error: 'Failed to delete product from cart' });
                     }
-                    return res.json({ message: 'Product removed from cart' });
+
+                    return res.json({ message: 'Product removed from cart as quantity is 0', quantity: newQuantity });
                 });
             } else {
-                // If the quantity is greater than 0, return the updated quantity
+                // If quantity is updated but not 0, return the updated quantity
                 return res.json({ message: 'Quantity updated', quantity: newQuantity });
             }
         } else {
@@ -516,6 +497,8 @@ app.post('/deleteproduct',(req,res)=>{
             return res.status(200).json({ message: "Data deleted successfully" }); 
         })
 })
+
+
 
 app.post('/productupdate',(req,res)=>{
     const{productid} = req.body
@@ -706,6 +689,92 @@ app.post('/purchasehistory',(req,res)=>{
         })
 
 })
+
+// Update rating for a specific order
+app.post('/updaterating', async (req, res) => {
+    const { orderId, rating } = req.body;
+
+    try {
+        await db.query('BEGIN');
+
+        // Get current rating and rating_count
+        const currentQuery = "SELECT rating, rating_count FROM sahil.order_history WHERE order_id = $1 AND status = 'approved'";
+        const currentResult = await db.query(currentQuery, [orderId]);
+
+        if (currentResult.rows.length === 0) {
+            return res.status(404).json({ err: "Order not found or not approved" });
+        }
+
+        const currentRating = currentResult.rows[0].rating || 0;
+        const currentCount = currentResult.rows[0].rating_count || 0;
+
+        // Calculate the new average rating
+        // If the user has rated before, adjust the rating accordingly
+        const newCount = currentCount + 1; // Increment count
+        const newRating = (currentRating * currentCount + rating) / newCount; // New average
+
+        // Update the database with the new rating and count
+        const updateQuery = "UPDATE sahil.order_history SET rating = $1, rating_count = $2 WHERE order_id = $3 AND status = 'approved'";
+        await db.query(updateQuery, [newRating, newCount, orderId]);
+
+        await db.query('COMMIT');
+
+        return res.status(200).json({ message: "Rating updated successfully" });
+    } catch (err) {
+        await db.query('ROLLBACK');
+        console.error('Failed to update rating', err);
+        return res.status(500).json({ err: "Failed to update rating" });
+    }
+});
+
+
+app.get('order-history', async (req, res) => {
+    try {
+      const client = await pool.connect();
+      const result = await client.query(`
+        SELECT 
+          to_char(created_at, 'Month') AS month,
+          COUNT(*) AS total_orders
+        FROM 
+          aman.order_history
+        GROUP BY 
+          to_char(created_at, 'Month')
+        ORDER BY 
+          MIN(EXTRACT(MONTH FROM created_at));
+      `);
+      client.release();
+      res.json(result.rows);
+    } catch (err) {
+      console.error('Error fetching order history:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  
+
+  app.get('/order-history', async (req, res) => {
+    try {
+        const query = `
+           SELECT 
+    DATE_TRUNC('month', created_at) AS month, 
+    COUNT(*) AS total_orders 
+FROM 
+    sahil.order_history 
+WHERE 
+    status = 'approved' 
+GROUP BY 
+    month 
+ORDER BY 
+    month ASC;
+        `; // Adjust table and column names as per your database structure
+
+        const { rows } = await db.query(query);
+        res.json(rows); // Send back the order data
+    } catch (error) {
+        console.error('Error fetching order history:', error);
+        res.status(500).json({ message: 'Failed to fetch order history' });
+    }
+});
+
 
 app.listen(8004, () => {console.log('Listening on port 8004');
 }); 

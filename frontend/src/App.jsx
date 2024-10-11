@@ -6,7 +6,6 @@ import Login from './component/Login'
 import Registration from './component/Registration'
 import NewProduct from './component/NewProduct'
 import OurProduct from './component/OurProduct'
-import Userhomepage from './component/userhomepage'
 import About from './component/About'
 import Contact from './component/Contact'
 import Updateproduct from './component/Updateproduct'
@@ -20,6 +19,8 @@ import ProductUpdate from './component/ProductUpdate'
 import OrderCard from './component/OrderCard'
 import OrderRequest from './component/OrderRequest'
 import PurchaseHistory from './component/PurchaseHistory'
+import UserDashboard from './component/UserDashboard'
+import AdminHome from './component/AdminHome'
 
 
 
@@ -29,6 +30,10 @@ const App = () => {
   
   const router = createBrowserRouter([
     
+    {
+      path:'/user/userhome',
+      element:<UserDashboard/>
+    },
     {
       path:'/',
       element:<Login/>
@@ -45,6 +50,10 @@ const App = () => {
         {
           path:'/admin/newproduct',
           element:<NewProduct/>
+        },
+        {
+          path:'/admin/adminhome',
+          element:<AdminHome/>
         },
         {
           path:'/admin/ourproduct',
@@ -77,10 +86,6 @@ const App = () => {
       path:'/user',
       element:<Layout/>,
       children:[
-        {
-          path:'/user/userhome',
-          element:<Userhomepage/>
-        },
         {
           path:'/user/cart',
           element:<Cart/>

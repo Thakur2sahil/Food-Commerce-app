@@ -51,7 +51,7 @@ const OrderCard = () => {
   }, []);
 
   return (
-    <div className="max-w-2xl mx-auto my-8 p-6 bg-white shadow-lg rounded-lg">
+    <div className="max-w-full mx-auto my-8 p-6 bg-white shadow-lg rounded-lg">
       <ToastContainer position="top-right" autoClose={1000} closeOnClick />
       {orders.length > 0 ? (
         orders.map((order) => (
@@ -73,7 +73,7 @@ const OrderCard = () => {
                       <img
                         src={`http://localhost:8004/${product.photo}`}
                         alt={product.name}
-                        className="w-12 h-12 object-cover rounded-full"
+                        className="w-16 h-16 object-cover rounded-full"
                       />
                     </td>
                     <td className="py-2 px-4">{product.name}</td>
