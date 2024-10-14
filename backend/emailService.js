@@ -10,7 +10,7 @@ async function sendEmail(to, subject, htmlContent) {
       secure: false, // use SSL
       auth: {
         user: 'sahilthakur14691@gmail.com', // Your Gmail email address
-        pass: 'fwzvmnvhcywfuhpr', // Your Gmail app-specific password
+        pass: 'lmqxtbbelawugrpm ', // Your Gmail app-specific password
       },
     });
 

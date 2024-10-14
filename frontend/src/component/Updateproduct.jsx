@@ -41,9 +41,9 @@ function Updateproduct() {
         handleget();
     }, []);
     return (
-        <div className='flex items-center justify-center p-5 m-5'>
+        <div className=' flex items-center justify-center p-5 m-5'>
         <div className='w-full max-w-6xl'>
-            <h1 className='m-3 text-3xl font-bold text-center'>Product List</h1>
+            <h1 className=' text-3xl font-bold text-center'>Product List</h1>
             <table className='min-w-full border border-gray-300 bg-gray-200'>
                 <thead className='bg-gray-800 text-white'>
                     <tr>

@@ -45,76 +45,71 @@ const upload = multer({storage})
 
 
 
-app.post('/signup', upload.single('image'), async(req, res) => {
-    const imgpath = `uploads/${req.file.filename.replace(/\\/g, "/")}`;
-    const { name, user, email, password, role } = req.body;
+app.post('/signup', upload.single('image'), async (req, res) => {
+    try {
+        const imgpath = `uploads/${req.file.filename.replace(/\\/g, "/")}`;
+        const { fullName, username, email, password, role } = req.body;
 
-    // Check if the email and username already exist
-    const checkEmailQuery = 'SELECT * FROM sahil.users WHERE email=$1 ';
-    
-    db.query(checkEmailQuery, [email], (err, result) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ error: 'Database error' });
+        // Check if the email already exists
+        const checkEmailQuery = 'SELECT * FROM sahil.users WHERE email=$1';
+        const emailResult = await db.query(checkEmailQuery, [email]);
+
+        if (emailResult.rows.length > 0) {
+            return res.status(400).json({ error: 'Email already exists' });
         }
 
-        if (result.rows.length > 0) {
-            // If email or username already exists, return an error
-            const existingUser = result.rows[0];
-            if (existingUser.email === email) {
-                return res.status(400).json({ error: 'Email already exists' });
-            }
-            if (existingUser.username === user) {
-                return res.status(400).json({ error: 'Username already exists' });
-            }
-        }
+        // Insert the user data
+        const insertQuery = `
+            INSERT INTO sahil.users (full_name, username, email, password, role, image)
+            VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
+        const insertResult = await db.query(insertQuery, [fullName, username, email, password, role, imgpath]);
 
-        // Insert the user data if the email and username do not exist
-        const insert = 'INSERT INTO sahil.users (full_name, username, email, password, role, image) VALUES($1, $2, $3, $4, $5, $6) RETURNING *';
+        const newUser = insertResult.rows[0];
 
-        db.query(insert, [name, user, email, password, role, imgpath], async(err, data) => {
-            if (err) {
-                console.error('Database error:', err);
-                return res.status(500).json({ error: 'Database insertion error' });
-            }
+        // Create a JWT token with the user's role
+        const payload = {
+            id: newUser.id,
+            email: newUser.email,
+            role: newUser.role,
+        };
+        const token = jwt.sign(payload, secretKey, { expiresIn: '1h' });
 
-            const newUser = data.rows[0];
+        // Prepare the HTML email content
+        const userHtmlTable = `
+            <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse;">
+                <thead>
+                    <tr><th colspan="2">Registration Details</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Username:</td><td>${username}</td></tr>  <!-- Fixed variable name -->
+                    <tr><td>Email:</td><td>${email}</td></tr>
+                    <tr><td>Full Name:</td><td>${fullName}</td></tr>
+                    <tr><td>Role:</td><td>${role}</td></tr>
+                </tbody>
+            </table>`;
 
-            // Create a JWT token with the user's role
-            const payload = {
-                id: newUser.id,
-                email: newUser.email,
-                role: newUser.role // 'admin' or 'user'
-            };
+        await sendEmail(
+            email,
+            'Registration Details',
+            `Hello ${fullName},<br><br>You have successfully registered with the following details:<br>${userHtmlTable}<br>Please wait for login until the admin approves you.`
+        );
 
-            // Sign the token with a secret key and set an expiration time (e.g., 1 hour)
-            const token = jwt.sign(payload, secretKey, { expiresIn: '1h' });
-
-            // Send registration confirmation email
-           
-
-          await sendEmail(
-        email,
-        'Registration Details',
-        `Hello ${name},<br><br>You have successfully registered with the following details`
-      );
-// Call the email function here
-
-            res.json({
-                success: 'User registered successfully',
-                user: newUser,
-                token: token // Return the token with the response
-            });
+        return res.json({
+            success: 'User registered successfully',
+            user: newUser,
+            token: token,
         });
-    });
+    } catch (err) {
+        console.error('Error:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
 });
-
 
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
 
     // Check if the user exists with the provided email and password
-    const select = 'SELECT * FROM sahil.users WHERE email=$1 AND password=$2';
+    const select = "SELECT * FROM sahil.users WHERE email=$1 AND password=$2";
 
     db.query(select, [email, password], (err, data) => {
         if (err) {
@@ -124,6 +119,11 @@ app.post('/login', (req, res) => {
 
         if (data.rows.length > 0) {
             const user = data.rows[0];
+
+            // Check if the user is approved
+            if (user.approved === false) { // Assuming approved is a boolean
+                return res.status(403).json({ error: 'Your account is not approved by the admin. Please wait for approval.' });
+            }
 
             // Create a JWT payload with user's role (admin/user)
             const payload = {
@@ -145,6 +145,8 @@ app.post('/login', (req, res) => {
         }
     });
 });
+
+
 
 
 app.post("/newproduct",upload.single('image'),(req,res)=>{
@@ -437,29 +439,63 @@ app.post('/profile', (req, res) => {
     });
 });
 
-app.post('/updateprofile',upload.single('file'),(req,res)=>{
-    
-    const {userid,username,email} = req.body
-   
-    const imgpath = `uploads/${req.file.filename.replace(/\\/g, "/")}`;
+app.post('/updateprofile', upload.single('file'), (req, res) => {
+    const { userid: userId, username, email } = req.body;
 
-    const insert = ` UPDATE sahil.users 
-        SET username = $1, email = $2, image = $3 
-        WHERE id = $4 
-        RETURNING username, email, image`
-    db.query(insert,[username,email,imgpath,userid] , (err,data)=>{
-        if(err)
-        {
-            console.error(err)
-            return res.status(500).json({ error: 'Database query error' });
-        }
-        if (data.rows.length > 0) {
-            return res.json(data.rows);
-        } else {
-            return res.json({ error: 'No data found' });
-        }
-    })
-})
+    // Check for required fields
+    if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+    }
+
+    const updateFields = [];
+    const values = [];
+
+    if (username) {
+        updateFields.push(`username = $${values.length + 1}`);
+        values.push(username);
+    }
+    if (email) {
+        updateFields.push(`email = $${values.length + 1}`);
+        values.push(email);
+    }
+
+    if (req.file) {
+        const filename = `uploads/${req.file.filename.replace(/\\/g, "/")}`;
+        updateFields.push(`image = $${values.length + 1}`);
+        values.push(filename);
+    }
+
+    if (updateFields.length > 0) {
+        const updateQuery = `UPDATE sahil.users SET ${updateFields.join(', ')} WHERE id = $${values.length + 1}`;
+
+        db.query(updateQuery, [...values, userId], (err) => {
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).json({ error: "Database error" });
+            }
+
+            // Fetch the updated user details
+            const fetchQuery = `SELECT username, email, image FROM sahil.users WHERE id = $1`;
+            db.query(fetchQuery, [userId], (err, result) => {
+                if (err) {
+                    console.error('Error fetching user data:', err);
+                    return res.status(500).json({ error: "Error fetching user data" });
+                }
+
+                // Check if user was found
+                if (result.rows.length === 0) {
+                    return res.status(404).json({ error: "User not found" });
+                }
+
+                // Return the updated user details
+                const updatedUser = result.rows[0];
+                return res.status(200).json({ message: "Profile updated successfully", user: updatedUser });
+            });
+        });
+    } else {
+        return res.status(400).json({ error: "No fields to update" });
+    }
+});
 
 
 app.post('/selectproduct',(req,res)=>{
@@ -611,60 +647,114 @@ app.post('/orderreq',(req,res)=>{
     })
 })
 
-app.post('/accept', (req, res) => {
+app.post('/accept', async (req, res) => {
     const { orderId } = req.body;
-    
 
     if (!orderId) {
         return res.status(400).json({ error: "orderId is required" });
     }
 
-    const updateQuery = "UPDATE sahil.order_history SET status = 'approved' WHERE order_id = $1";
+    try {
+        // Update order status to 'approved' and get the associated user ID
+        const updateQuery = "UPDATE sahil.order_history SET status = 'approved' WHERE order_id = $1 RETURNING user_id";
+        const { rows } = await db.query(updateQuery, [orderId]);
 
-    db.query(updateQuery, [orderId], (err, result) => {
-        if (err) {
-            console.error("Database error:", err);
-            return res.status(500).json({ error: "Internal Server Error" });
-        }
-
-        if (result.rowCount === 0) {
+        // Check if the order exists
+        if (rows.length === 0) {
             return res.status(404).json({ error: "Order not found" });
         }
 
-        return res.status(200).json({ message: "Order is accepted" });
-    });
+        const userId = rows[0].user_id;
+
+        // Fetch user details based on user ID
+        const userQuery = "SELECT username, email, full_name FROM sahil.users WHERE id = $1";
+        const userResult = await db.query(userQuery, [userId]);
+
+        // Check if user exists
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const { username, email, full_name: fullName } = userResult.rows[0];
+
+        // Prepare email content
+        const emailSubject = 'Your Order Has Been Approved';
+        const emailBody = `
+            Hello ${fullName},<br><br>
+            We are pleased to inform you that your order with ID ${orderId} has been approved.<br>
+            Thank you for your purchase!<br>
+            If you have any questions or need further assistance, please feel free to contact us.<br><br>
+            Best regards,<br>
+            Your Company Name
+        `;
+
+        // Send email to the user notifying them about their order approval
+        await sendEmail(email, emailSubject, emailBody);
+
+        // Respond with success message
+        return res.status(200).json({ message: "Order has been approved and user notified" });
+    } catch (error) {
+        console.error("Error processing request:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
 });
 
 
-app.post('/cancel', (req, res) => {
+app.post('/cancel', async (req, res) => {
     const { orderId } = req.body;
 
     console.log(orderId);
-    
 
     // Validate the orderId input
     if (!orderId) {
         return res.status(400).json({ error: "Order ID is required" });
     }
 
-    const deleteQuery = "DELETE FROM sahil.order_history WHERE order_id = $1";
+    try {
+        // Update order status to 'canceled' and get the associated user ID
+        const updateQuery = "UPDATE sahil.order_history SET status = 'canceled' WHERE order_id = $1 RETURNING user_id";
+        const { rows } = await db.query(updateQuery, [orderId]);
 
-    // Execute the delete query
-    db.query(deleteQuery, [orderId], (err, result) => {
-        if (err) {
-            console.error("Database error:", err); // Log detailed error message for debugging
-            return res.status(500).json({ error: "Internal Server Error" });
-        }
-
-        // Check if the order was found and deleted
-        if (result.rowCount === 0) {
+        // Check if the order exists
+        if (rows.length === 0) {
             return res.status(404).json({ error: "Order not found" });
         }
 
-        // Success response if the order was deleted
-        return res.status(200).json({ message: "Order has been cancelled" });
-    });
+        const userId = rows[0].user_id;
+
+        // Fetch user details based on user ID
+        const userQuery = "SELECT username, email, full_name FROM sahil.users WHERE id = $1"; // Adjust the selected fields as necessary
+        const userResult = await db.query(userQuery, [userId]);
+
+
+
+        const { username, email, full_name: fullName } = userResult.rows[0];
+
+        // Prepare email content
+        const emailSubject = 'Your Order Has Been Canceled';
+        const emailBody = `
+            Hello ${fullName},<br><br>
+            We regret to inform you that your order with ID ${orderId} has been canceled.<br>
+            If you have any questions or concerns, please feel free to contact us.<br><br>
+            Best regards,<br>
+            Your Company Name
+        `;
+
+        // Send email to the user notifying them about their order cancellation
+        await sendEmail(email, emailSubject, emailBody);
+
+        // Delete the products associated with the canceled order
+        const deleteProductsQuery = "DELETE FROM sahil.order_history WHERE user_id = $1 and status= 'canceled'";
+        await db.query(deleteProductsQuery, [userId]);
+
+        // Respond with success message
+        return res.status(200).json({ message: "Order has been canceled, products removed, and user notified" });
+    } catch (error) {
+        console.error("Error processing request:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
 });
+
 
 app.post('/purchasehistory',(req,res)=>{
 
@@ -772,6 +862,267 @@ ORDER BY
     } catch (error) {
         console.error('Error fetching order history:', error);
         res.status(500).json({ message: 'Failed to fetch order history' });
+    }
+});
+
+app.get('/users/not-approved', async (req, res) => {
+    try {
+        const query = "SELECT * FROM sahil.users WHERE approved = 'false'"; // Assuming status column exists
+        const { rows } = await db.query(query);
+        console.log(rows)
+        
+        return res.status(200).json(rows);
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+app.post('/acceptuser', async (req, res) => {
+    const { userId } = req.body;
+
+    // Validate userId
+    if (!userId) {
+        return res.status(400).json("User ID is required");
+    }
+
+    // Update query to set approved and return the user's username and email
+    const updateQuery = "UPDATE sahil.users SET approved = true WHERE id = $1 RETURNING username, email";
+
+    try {
+        const { rows } = await db.query(updateQuery, [userId]);
+        console.log(rows)
+        // Check if the user was found and updated
+        if (rows.length === 0) {
+            return res.status(404).json("No matching record found");
+        }
+
+        const { username, email } = rows[0];
+
+
+        // Sending email notification after successful update
+        try {
+            await sendEmail(
+                email,
+                'User Approved',
+                `
+                <p>Hello ${username},</p>
+                <p>Your account has been approved successfully.</p>
+                <p>Thank you for your patience!</p>
+                `
+            );
+        } catch (emailError) {
+            console.error("Email sending error:", emailError);
+            return res.status(500).json("User updated, but failed to send email.");
+        }
+
+        return res.status(200).json("Update successful");
+
+    } catch (err) {
+        console.error("Database error:", err);
+        return res.status(500).json("Database error");
+    }
+});
+
+app.post('/canceluser', async (req, res) => {
+    const { userId } = req.body;
+
+    // Validate userId
+    if (!userId) {
+        return res.status(400).json("User ID is required");
+    }
+
+    const deleteQuery = "DELETE FROM sahil.users WHERE id = $1 RETURNING email, username";
+
+    try {
+        const { rows } = await db.query(deleteQuery, [userId]);
+
+        // Check if the user was found and deleted
+        // if (rows.length === 0) {
+        //     console.log("No user found with that ID");
+        //     return res.status(404).json("No user found with that ID");
+        // }
+
+        const { email, username } = rows[0];
+
+        // Sending email notification after successful deletion
+        try {
+            await sendEmail(
+                email,
+                'Account Cancellation',
+                `
+                <p>Hello ${username},</p>
+                <p>Your account has been successfully canceled.</p>
+                <p>If you have any questions, please contact us.</p>
+                `
+            );
+        } catch (emailError) {
+            console.error("Email sending error:", emailError);
+            // Optionally, you can choose to notify the user that email sending failed.
+            // return res.status(500).json("User deleted, but failed to send email.");
+        }
+
+        return res.status(200).json("User deleted successfully");
+
+    } catch (err) {
+        console.error("Database error:", err);
+        return res.status(500).json("Database error");
+    }
+});
+
+
+
+app.post('/otp', async (req, res) => {
+    const { userId } = req.body;
+
+    try {
+        // Fetch user details from the database
+        const user = await db.query('SELECT * FROM sahil.users WHERE id = $1', [userId]);
+        
+        if (user.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const userEmail = user.rows[0].email;
+        const username = user.rows[0].username; // Fetch username from user data
+
+        // Generate a 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Store the OTP and its expiry time in the database
+        await db.query('UPDATE sahil.users SET otp = $1, otp_expires_at = $2 WHERE id = $3', [
+            otp,
+            new Date(Date.now() + 15 * 60 * 1000), // OTP valid for 15 minutes
+            userId,
+        ]);
+
+        // Send the OTP email
+        try {
+            await sendEmail(
+                userEmail,
+                'Your OTP Code',
+                `
+                <p>Hello ${username},</p>
+                <p>Your OTP code is <strong>${otp}</strong>.</p>
+                <p>This code is valid for 15 minutes. Please do not share it with anyone.</p>
+                <p>Thank you!</p>
+                `
+            );
+        } catch (emailError) {
+            console.error("Email sending error:", emailError);
+            return res.status(500).json("User updated, but failed to send email.");
+        }
+
+        res.status(200).json({ message: 'OTP sent successfully to your email' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+app.post('/reset-password', async (req, res) => {
+    const { otp, newPassword } = req.body;
+    const otp_val = otp;
+    console.log(otp_val); // Check if the OTP value is logged correctly
+  
+    try {
+      // Fetch the user based on the provided OTP
+      const user = await db.query('SELECT * FROM sahil.users WHERE otp = $1', [otp_val]);
+      console.log(user.rows); // Log the user data to check if it's fetched correctly
+  
+      if (user.rows.length === 0) {
+        return res.status(400).json({ message: 'Invalid OTP' });
+      }
+  
+      
+  
+      // Update the user's password in the database
+      await db.query('UPDATE sahil.users SET password = $1 WHERE otp = $2', [newPassword, otp_val]);
+  
+      // Clear OTP and expiry in the database
+      await db.query('UPDATE sahil.users SET otp = NULL, otp_expires_at = NULL WHERE otp = $1', [otp_val]);
+  
+      res.status(200).json({ message: 'Password updated successfully' });
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server error');
+    }
+  });
+  
+
+  
+app.post('/profile', (req, res) => {
+    const { userId } = req.body;
+    const select = 'SELECT * FROM sahil.users WHERE id = $1;';
+
+    db.query(select, [userId], (err, data) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ message: "Database error" });
+        }
+
+        // Check if data is available
+        if (data.rows.length > 0) {
+            
+            return res.status(200).json(data.rows); // Return the data as response
+        } else {
+            return res.status(404).json({ message: "No data available" });
+        }
+    });
+});
+
+
+app.post('/cartCount', async (req, res) => {
+    const { userId } = req.body;
+  
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+  
+    try {
+      // Fetch the cart count for the given userId
+      const result = await db.query(`SELECT COUNT(*) AS itemCount FROM sahil.cart WHERE id = $1`, [userId]);
+  
+      if (result.rows.length > 0) {
+        const { itemCount } = result.rows[0];
+        return res.json({ count: itemCount });
+      }
+  
+      res.status(404).json({ message: 'User not found' });
+    } catch (error) {
+      console.error("Database error:", error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  });
+
+
+  app.post('/customer_contacts', async (req, res) => {
+    const { name, email, favorite_food, message } = req.body;
+
+    // Basic validation
+    if (!name || !email) {
+        return res.status(400).json({ error: 'Name and email are required.' });
+    }
+
+    // SQL query to insert the contact information
+    const insertQuery = `
+        INSERT INTO sahil.customer_contacts (name, email, favorite_food, message)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id;
+    `;
+
+    try {
+        const result = await db.query(insertQuery, [name, email, favorite_food, message]);
+        const newContactId = result.rows[0].id; // Get the newly created contact ID
+
+        return res.status(201).json({
+            message: 'Contact information saved successfully!',
+            id: newContactId,
+        });
+    } catch (error) {
+        console.error('Error saving contact information:', error);
+        return res.status(500).json({ error: 'Internal server error.' });
     }
 });
 

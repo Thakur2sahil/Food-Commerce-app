@@ -21,6 +21,10 @@ import OrderRequest from './component/OrderRequest'
 import PurchaseHistory from './component/PurchaseHistory'
 import UserDashboard from './component/UserDashboard'
 import AdminHome from './component/AdminHome'
+import UserRequest from './component/UserRequest'
+import UpdateUserProfile from './component/UpdateUserProfile'
+import ResetPassword from './component/ResetPassword'
+
 
 
 
@@ -30,6 +34,10 @@ const App = () => {
   
   const router = createBrowserRouter([
     
+    {
+      path:'/reset',
+      element:<ResetPassword/>
+    },
     {
       path:'/user/userhome',
       element:<UserDashboard/>
@@ -67,9 +75,14 @@ const App = () => {
           path:'/admin/updateprofile',
           element:<UpdateProfile/>
         },
+
         {
           path:'/admin/productupdate',
           element:<ProductUpdate/>
+        },
+        {
+          path:'/admin/reset',
+          element:<ResetPassword/>
         },
         {
           path:'/admin/deleteproduct',
@@ -78,6 +91,10 @@ const App = () => {
         {
           path:'/admin/orderrequest',
           element:<OrderRequest/>
+        },
+        {
+          path:'/admin/userrequest',
+          element:<UserRequest/>
         },
   
       ]
@@ -106,6 +123,15 @@ const App = () => {
           path:'/user/purchasehistory',
           element:<PurchaseHistory/>
         },
+        {
+          path:'/user/uerupdateprofile',
+          element:<UpdateUserProfile/>
+        },
+        {
+          path:'/user/reset',
+          element:<ResetPassword/>
+        },
+        
         {
           path:'/user/placeorder',
           element:<PlaceOrder/>

@@ -42,20 +42,19 @@ function OrderRequest() {
             console.error(error);
         }
     };
-    
-    const cancel = async(orderId) => {
+    const cancel = async (orderId) => {
         try {
             const res = await axios.post('http://localhost:8004/cancel', { orderId });
             console.log(res);
-            toast.success(`${orderId} is canceled`);
+            toast.success(`Order ID ${orderId} has been canceled`);
     
-            // Update the orders state directly if needed
-            setOrders((prevOrders) => prevOrders.filter(order => order.order_id !== orderId));
-    
-            // Or refetch data
-            fetchData(); // This should still work if your backend is set up correctly
+            // Update the orders state directly
+            setOrders((prevOrders) => 
+                prevOrders.filter(order => order.order_id !== orderId)
+            );
         } catch (error) {
             console.error(error);
+            toast.error("Failed to cancel the order.");
         }
     };
     

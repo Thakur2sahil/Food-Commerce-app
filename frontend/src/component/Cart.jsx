@@ -72,6 +72,7 @@ function Cart() {
       return (totalAfterDiscount * 0.18); // 18% CGST
     }
   };
+  const gst = calculateGST();
 
   const totalAmount = totalAfterDiscount + calculateGST();
 
@@ -94,12 +95,15 @@ function Cart() {
 
   const placeOrder = () => {
     navigate('/user/placeorder', {
-      state: { totalAmount }
+      state: { totalAmount  }
     });
   };
   const redirecttotreackorder =() =>{
-    navigate('/user/ordercard')
+    navigate('/user/ordercard' ,{
+      state: { totalAmount  }
+    })
   }
+
 
   const redirecttopurchasehistory =() =>{
     navigate('/user/purchasehistory')

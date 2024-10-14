@@ -7,6 +7,8 @@ import 'react-toastify/dist/ReactToastify.css'; // Import toast styles
 function Login() {
   const navigate = useNavigate();
 
+  localStorage.clear();
+
   const [value, setValue] = useState({
     email: '',
     password: ''
@@ -51,12 +53,15 @@ function Login() {
         toast.success("Login successful!", { autoClose: 2000 });
     
         setTimeout(() => {
-          navigate(role === 'admin' ? '/admin' : '/user/userhome');
+          navigate(role === 'admin' ? '/admin/newproduct' : '/user/userhome');
         }, 2000);
       }
     } catch (error) {
-      toast.error("Unable to connect. Please check your credentials.");
-      console.error(error);
+      if (error.response) {
+        toast.error(error.response.data.error); // Display the error message
+    } else {
+        toast.error('An error occurred. Please try again.');
+    }
     }
   };
 

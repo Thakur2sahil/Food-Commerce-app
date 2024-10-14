@@ -1,17 +1,45 @@
-import React from 'react';
-import img from '../admin/images/ub.jfif'
-import img1 from '../admin/images/ubereats.png'
+import React, { useState } from 'react';
+import img from '../admin/images/ub.jfif';
+import img1 from '../admin/images/ubereats.png';
+import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
 
 function Contact() {
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [favoriteFood, setFavoriteFood] = useState('');
+    const [message, setMessage] = useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault(); // Prevent the default form submission
+
+        try {
+            const response = await axios.post('http://localhost:8004/customer_contacts', {
+                name,
+                email,
+                favorite_food: favoriteFood,
+                message,
+            });
+
+            if (response.status === 200) {
+                toast.success('Your message has been sent successfully!');
+                // Clear the form fields after submission
+                setName('');
+                setEmail('');
+                setFavoriteFood('');
+                setMessage('');
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            toast.error('There was an error sending your message. Please try again later.');
+        }
+    };
+
     return (
-        <div className="flex justify-center items-center min-h-screen bg-gray-100 px-4">
-
-            <div className="flex flex-col md:flex-row bg-white shadow-md rounded-lg max-w-5xl w-full">
-
-
-                <div className="p-8 flex-[0.6]">
+        <div className="flex justify-center items-center min-h-full bg-gray-100 px-4 my-2">
+            <div className="flex flex-col md:flex-row bg-white shadow-md rounded-lg max-w-4xl w-11/12">
+                <div className="p-6 flex-[0.6]">
                     <div className="flex items-center mb-4">
-
                         <img src={img1} alt="ubereats logo" className="w-10 h-10 mr-2" />
                         <h1 className="font-bold text-lg">UberEats</h1>
                     </div>
@@ -27,7 +55,6 @@ function Contact() {
                     </div>
                 </div>
 
-                {/* Image */}
                 <div className="flex-shrink-0">
                     <img
                         src={img}
@@ -37,31 +64,53 @@ function Contact() {
                 </div>
             </div>
 
-            {/* Right Section (Contact Form) */}
-            <div className="ml-0 md:ml-10 mt-10 md:mt-0 bg-white p-8 shadow-md rounded-lg max-w-md w-full">
+            <div className="ml-0 md:ml-8 mt-10 md:mt-0 bg-white p-6 shadow-md rounded-lg max-w-md w-full">
                 <h2 className="text-2xl font-bold mb-6">Contact Us</h2>
-                <form>
+                <form onSubmit={handleSubmit}>
                     <div className="mb-4">
                         <label className="block text-gray-700">Name</label>
-                        <input type="text" className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-blue-500" />
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-blue-500"
+                            required
+                        />
                     </div>
                     <div className="mb-4">
                         <label className="block text-gray-700">Email</label>
-                        <input type="email" className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-blue-500" />
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-blue-500"
+                            required
+                        />
                     </div>
                     <div className="mb-4">
                         <label className="block text-gray-700">Favorite Food</label>
-                        <input type="text" className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-blue-500" />
+                        <input
+                            type="text"
+                            value={favoriteFood}
+                            onChange={(e) => setFavoriteFood(e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-blue-500"
+                        />
                     </div>
                     <div className="mb-4">
                         <label className="block text-gray-700">Message</label>
-                        <textarea className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-blue-500" rows="4"></textarea>
+                        <textarea
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-blue-500"
+                            rows="3"
+                        ></textarea>
                     </div>
                     <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
                         Submit
                     </button>
                 </form>
             </div>
+            <ToastContainer position='bottom-right' autoClose={3000} hideProgressBar={false} />
         </div>
     );
 }

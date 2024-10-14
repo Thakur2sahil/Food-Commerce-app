@@ -1,10 +1,13 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 
 const OrderCard = () => {
   const [orders, setOrders] = useState([]);
+  const location = useLocation();
   const userId = localStorage.getItem('userid');
+   const { totalAmount } = location.state; // Default to 0 if not provided
 
   const fetchdata = async () => {
     try {
@@ -17,7 +20,7 @@ const OrderCard = () => {
         console.log("No data found");
       }
     } catch (error) {
-      toast.error("Not able to connect with Database");
+      console.error("Not able to connect with Database");
     }
   };
 
@@ -83,7 +86,8 @@ const OrderCard = () => {
                 ))}
               </tbody>
             </table>
-            <div className="flex justify-center mt-6">
+            <div className="flex justify-between mt-6">
+              <span className="font-bold text-lg">Total Amount: ₹{totalAmount}</span>
               <button onClick={() => del(order.order_id)} className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
                 Delete Order
               </button>

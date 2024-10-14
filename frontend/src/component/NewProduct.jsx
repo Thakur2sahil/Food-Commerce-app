@@ -52,9 +52,9 @@ function NewProduct() {
     }
 
     return (
-        <div className="flex items-center justify-center mx-6  px-4 py-0">
+        <div className="flex items-center justify-center mx-6  px-4 ">
         <div className="bg-white p-10 shadow-xl rounded-lg w-full max-w-md mt-0">
-            <h1 className="text-3xl font-semibold text-center mb-4  text-gray-800">Create New Product</h1>
+            <h1 className="text-2xl font-bold text-center mb-2  text-gray-800">Create New Product</h1>
             <form onSubmit={handleSubmit}>
                 <div className="mb-2">
                     <label className="block text-sm font-medium mb-1 text-gray-700">Product Name</label>
@@ -67,7 +67,7 @@ function NewProduct() {
                     
                     />
                 </div>
-                <div className="mb-4">
+                <div className="mb-2">
                     <label className="block text-sm font-medium mb-1 text-gray-700">Price</label>
                     <input
                         type='number'
@@ -78,7 +78,7 @@ function NewProduct() {
                        
                     />
                 </div>
-                <div className="mb-4">
+                <div className="mb-2">
                     <label className="block text-sm font-medium mb-1 text-gray-700">Upload Product Image</label>
                     <input
                         type='file'

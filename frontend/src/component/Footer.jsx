@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 function Footer() {
     return (
-        <footer className="bg-gray-900 text-gray-300 py-4">
+        <footer  className="bg-gray-900 text-gray-300 py-4 ">
             <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
                 
                 {/* Left Section: Logo and Copyright */}

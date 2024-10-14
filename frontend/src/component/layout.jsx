@@ -5,19 +5,15 @@ import Footer from './Footer';
 
 function Layout() {
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen w-full overflow-hidden">
             {/* User Navigation at the top */}
-            <div>
-                <Usernav />
-            </div>
+            <Usernav />
             {/* Main content area that flows between Usernav and Footer */}
-            <div className="flex-grow">
+            <div className="flex-grow w-full overflow-y-auto">
                 <Outlet />
             </div>
             {/* Sticky Footer at the bottom */}
-            <div className="mt-auto">
-                <Footer />
-            </div>
+            <Footer />
         </div>
     );
 }

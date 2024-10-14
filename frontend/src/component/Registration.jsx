@@ -1,170 +1,147 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';  // Import react-toastify styles
+import 'react-toastify/dist/ReactToastify.css';
 
-function Registration() {
-    const navigate = useNavigate();
+const Signup = () => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [role, setRole] = useState('user'); // Added state for role
+  const [showPassword, setShowPassword] = useState(false);
+  const [image, setImage] = useState(null);
+  const navigate = useNavigate();
 
-    const [value, setValue] = useState({
-        name: '',
-        user: '',
-        email: '',
-        password: ''
-    });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validation checks
+    if (!fullName) {
+      toast.error('Please fill in your full name.');
+      return;
+    }
+    if (!email) {
+      toast.error('Please fill in your email.');
+      return;
+    }
+    if (!username) {
+      toast.error('Please fill in your username.');
+      return;
+    }
+    if (!password) {
+      toast.error('Please fill in your password.');
+      return;
+    }
 
-    const [role, setRole] = useState('');
-    const [img, setImg] = useState(null);
-    const [errors, setErrors] = useState({});
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('password', password);
+    formData.append('email', email);
+    formData.append('fullName', fullName);
+    formData.append('role', role); // Added role to formData
+    if (image) formData.append('image', image);
 
-    const handleChange = (e) => {
-        setValue(prev => ({ ...prev, [e.target.name]: e.target.value }));
-    };
+    try {
+      const response = await axios.post('http://localhost:8004/signup', formData);
+      console.log(response.data);
+      toast.success('Signup successful! Please check your email for further instructions.');
+      setTimeout(() => {
+        navigate('/');
+      }, 2000); // Redirect after 2 seconds
+    } catch (error) {
+      console.error('Error:', error.response ? error.response.data.message : error.message);
+      toast.error('Signup failed. Please try again.');
+    }
+  };
 
-    // Validation logic
-    const validateForm = () => {
-        let formErrors = {};
-        if (value.name.trim().length < 3) {
-            formErrors.name = "Full name must be at least 3 characters long";
-        }
-        if (value.user.trim().length < 3) {
-            formErrors.user = "Username must be at least 3 characters long";
-        }
-        if (!/\S+@\S+\.\S+/.test(value.email)) {
-            formErrors.email = "Please enter a valid email address";
-        }
-        if (value.password.length < 3) {
-            formErrors.password = "Password must be at least 6 characters long";
-        }
-        if (!role) {
-            formErrors.role = "Please select a role";
-        }
-        if (!img) {
-            formErrors.image = "Please upload an image";
-        }
-        return formErrors;
-    };
+  return (
+    <div className="flex justify-center items-center h-screen bg-gray-100">
+      <div className="bg-white p-8 rounded shadow-md w-full max-w-md text-center">
+        <h2 className="text-2xl font-bold mb-6">Signup</h2>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            className="mb-4 p-2 w-full border rounded"
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="mb-4 p-2 w-full border rounded"
+          />
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="mb-4 p-2 w-full border rounded"
+          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mb-4 p-2 w-full border rounded pr-12"
+            />
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer"
+            >
+              {showPassword ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.5C6.478 4.5 1.943 8.239.5 12c1.443 3.761 5.978 7.5 11.5 7.5s10.057-3.739 11.5-7.5C22.057 8.239 17.522 4.5 12 4.5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.5C6.478 4.5 1.943 8.239.5 12c1.443 3.761 5.978 7.5 11.5 7.5s10.057-3.739 11.5-7.5C22.057 8.239 17.522 4.5 12 4.5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+                </svg>
+              )}
+            </span>
+          </div>
+          <input
+            type="file"
+            onChange={(e) => setImage(e.target.files[0])}
+            className="mb-4 p-2 w-full border rounded"
+          />
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="mb-4 p-2 w-full border rounded"
+          >
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button
+            type="submit"
+            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors"
+          >
+            Signup
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="w-full mt-2 bg-gray-500 text-white py-2 rounded hover:bg-gray-600 transition-colors"
+          >
+            Already have an account? Login
+          </button>
+        </form>
+      </div>
+      <ToastContainer />
+    </div>
+  );
+};
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        const validationErrors = validateForm();
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('name', value.name);
-        formData.append('user', value.user);
-        formData.append('email', value.email);
-        formData.append('password', value.password);
-        formData.append('role', role);
-        formData.append('image', img);
-
-        try {
-            const res = await axios.post('http://localhost:8004/signup', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            // Show success toast
-            toast.success("The user is registered successfully");
-            navigate('/');
-        } catch (err) {
-            console.error(err);
-            // Show error toast
-            toast.error("Registration failed");
-        }
-    };
-
-    return (
-        <div className="flex items-center justify-center bg-gradient-to-r from-purple-600 to-blue-600 px-4">
-            <div className="bg-white p-10 rounded-lg shadow-lg w-full max-w-md">
-                <h1 className="text-3xl font-semibold text-center mb-6 text-gray-800">Registration Form</h1>
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1 text-gray-700">Full Name</label>
-                        <input
-                            type='text'
-                            name='name'
-                            placeholder='Enter your full name'
-                            onChange={handleChange}
-                            className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1 text-gray-700">User Name</label>
-                        <input
-                            type='text'
-                            name='user'
-                            placeholder='Enter your user name'
-                            onChange={handleChange}
-                            className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        {errors.user && <p className="text-red-500 text-sm">{errors.user}</p>}
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1 text-gray-700">Email</label>
-                        <input
-                            type='email'
-                            name='email'
-                            placeholder='Enter your email'
-                            onChange={handleChange}
-                            className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1 text-gray-700">Password</label>
-                        <input
-                            type='password'
-                            name='password'
-                            placeholder='Enter your password'
-                            onChange={handleChange}
-                            className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1 text-gray-700">Role</label>
-                        <select
-                            name='role'
-                            onChange={(e) => setRole(e.target.value)}
-                            className="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value=''>Select Role</option>
-                            <option value='admin'>Admin</option>
-                            <option value='user'>User</option>
-                        </select>
-                        {errors.role && <p className="text-red-500 text-sm">{errors.role}</p>}
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1 text-gray-700">Upload your Image</label>
-                        <input
-                            type='file'
-                            onChange={(e) => setImg(e.target.files[0])}
-                            className="w-full border border-gray-300 rounded-md p-3 focus:outline-none"
-                        />
-                        {errors.image && <p className="text-red-500 text-sm">{errors.image}</p>}
-                    </div>
-                    <div>
-                        <button
-                            type='submit'
-                            className="w-full bg-gradient-to-r from-blue-500 to-pink-500 text-white font-semibold py-3 rounded-md hover:opacity-90 transition duration-200"
-                        >
-                            Register
-                        </button>
-                    </div>
-                </form>
-                <div className="mt-4 text-center">
-                    <p className="text-gray-600">Already have an account? <Link to={'/'} className="text-blue-500 underline">Login Page</Link></p>
-                </div>
-            </div>
-            {/* Toast Container to display notifications */}
-            <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
-        </div>
-    );
-}
-
-export default Registration;
+export default Signup;

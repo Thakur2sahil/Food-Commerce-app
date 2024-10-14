@@ -65,7 +65,7 @@ function UpdateUserProfile() {
                 localStorage.setItem('name', username);
                 localStorage.setItem('photo', image);
                 fetchData(); // Refresh data after update
-                navigate('/admin/newproduct')
+                navigate('/user/userhome')
             } else {
                 toast.error("Unexpected response status!");
             }
@@ -77,7 +77,7 @@ function UpdateUserProfile() {
 
     // Handle password reset
     const handleResetPassword = async () => {
-        navigate('/admin/reset',{
+        navigate('/user/reset',{
             state: userId
         })
     };

@@ -33,10 +33,12 @@ function Sidebar() {
                     <Link to="/admin/orderrequest" className="block text-lg hover:bg-gray-700 px-4 py-2 transition duration-200">
                         <h2>Order Request</h2>
                     </Link>
-
-                    <Link to="/admin/updateprofile" className="block text-lg hover:bg-gray-700 px-4 py-2 transition duration-200">
-                        <h2>Update Profile</h2>
+                    <Link to="/admin/userrequest" className="block text-lg hover:bg-gray-700 px-4 py-2 transition duration-200">
+                        <h2>User Request</h2>
                     </Link>
+                    {/* <Link to="/admin/message" className="block text-lg hover:bg-gray-700 px-4 py-2 transition duration-200">
+                        <h2>User Message</h2>
+                    </Link> */}
 
                     <Link to="/" className="block text-lg hover:bg-gray-700 px-4 py-2 transition duration-200">
                         <h2>Logout</h2>
