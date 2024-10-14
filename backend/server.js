@@ -231,7 +231,7 @@ async function checkexits(value) {
 
 
 app.post('/card1', (req, res) => {
-    const { userid, pid, quantity } = req.body;
+    const { userId, pid, quantity } = req.body;
 
 
     const insert = `INSERT INTO sahil.cart(user_id, product_id, quantity) VALUES ($1, $2, $3)`;
@@ -248,7 +248,7 @@ app.post('/card1', (req, res) => {
                 }
             });
         } else {
-            db.query(insert, [userid, pid, quantity], (err, data) => {
+            db.query(insert, [userId, pid, quantity], (err, data) => {
                 if (err) {
                     console.error("Error inserting into cart: ", err);
                     return res.status(500).json({ error: "Error inserting into cart" });
@@ -527,10 +527,9 @@ app.post('/deleteproduct',(req,res)=>{
         where id=$1`
         db.query(insert,[productid],(err,data)=>{
             if (err) {
-                console.error(err);
                 return res.status(500).json({ err: "Database error" });
             }
-            return res.status(200).json({ message: "Data deleted successfully" }); 
+            return res.status(200).json({ success: true, message: "Data deleted successfully" });
         })
 })
 
@@ -557,28 +556,59 @@ app.post('/productupdate',(req,res)=>{
     })
 }) 
 
-app.post('/upproduct',upload.single('image'),(req,res)=>{
-    const image = `uploads/${req.file.filename.replace(/\\/g, "/")}`;
-    const {name,price,description,category,discount,productid} = req.body
+app.post('/upproduct', upload.single('image'), (req, res) => {
+    const { name, price, description, category, discount, productid } = req.body;
+    const updates = [];
+    const values = [];
 
-    const update = `update  sahil.products 
-    set name=$1,price=$2,description=$3,category=$4,discount=$5,photo=$6
-    where id=$7`
+    if (name) {
+        updates.push(`name = $${updates.length + 1}`);
+        values.push(name);
+    }
+    if (price) {
+        updates.push(`price = $${updates.length + 1}`);
+        values.push(price);
+    }
+    if (description) {
+        updates.push(`description = $${updates.length + 1}`);
+        values.push(description);
+    }
+    if (category) {
+        updates.push(`category = $${updates.length + 1}`);
+        values.push(category);
+    }
+    if (discount) {
+        updates.push(`discount = $${updates.length + 1}`);
+        values.push(discount);
+    }
+    if (req.file) {
+        const image = `uploads/${req.file.filename.replace(/\\/g, "/")}`;
+        updates.push(`photo = $${updates.length + 1}`);
+        values.push(image);
+    }
 
-    db.query(update,[name,price,description,category,discount,image,productid],(err,data)=>{
-        if(err)
-        {
-            return res.status(500).json('Databse Error')
+    if (updates.length === 0) {
+        return res.status(400).json("No fields to update");
+    }
+
+    const updateQuery = `UPDATE sahil.products SET ${updates.join(', ')} WHERE id = $${updates.length + 1}`;
+    values.push(productid);
+
+    console.log("Update Query:", updateQuery, "Values:", values);
+
+    db.query(updateQuery, values, (err, data) => {
+        if (err) {
+            console.error("Database Error:", err.message);
+            return res.status(500).json('Database Error');
         }
         if (data.rowCount > 0) {
             console.log("Product updated successfully");
-            return res.status(200).json(data.rows[0]);  // Return the updated product
+            return res.status(200).json({ success: true, message: 'Product updated successfully' });
         } else {
-            return res.status(400).json("No data available");
+            return res.status(404).json("No product found or no fields were updated");
         }
-    })
-    
-})
+    });
+});
 
 app.post('/ordercard',(req,res)=>{
     const { userId } = req.body;
@@ -1049,7 +1079,7 @@ app.post('/reset-password', async (req, res) => {
       res.status(500).send('Server error');
     }
   });
-  
+
 
   
 app.post('/profile', (req, res) => {
@@ -1075,26 +1105,33 @@ app.post('/profile', (req, res) => {
 
 app.post('/cartCount', async (req, res) => {
     const { userId } = req.body;
-  
+
     if (!userId) {
-      return res.status(400).json({ message: 'User ID is required' });
+        return res.status(400).json({ message: 'User ID is required' });
     }
-  
+
+    console.log("User ID received:", userId); // Log the user ID
+
     try {
-      // Fetch the cart count for the given userId
-      const result = await db.query(`SELECT COUNT(*) AS itemCount FROM sahil.cart WHERE id = $1`, [userId]);
-  
-      if (result.rows.length > 0) {
-        const { itemCount } = result.rows[0];
-        return res.json({ count: itemCount });
-      }
-  
-      res.status(404).json({ message: 'User not found' });
+        const result = await db.query(`SELECT COUNT(*) AS itemcount FROM sahil.cart WHERE user_id = $1`, [userId]);
+        
+        console.log("Query Result:", result); // Log the entire result
+
+        if (result.rows.length > 0) {
+            const { itemcount } = result.rows[0]; // Update to use itemcount
+            console.log("Item Count:", itemcount); // Log the item count
+            
+            return res.json({ count: parseInt(itemcount, 10) }); // Return as integer
+        }
+
+        res.status(404).json({ message: 'User not found' });
     } catch (error) {
-      console.error("Database error:", error);
-      res.status(500).json({ message: 'Internal Server Error' });
+        console.error("Database error:", error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
-  });
+});
+
+
 
 
   app.post('/customer_contacts', async (req, res) => {

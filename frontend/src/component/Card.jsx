@@ -2,14 +2,15 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 
-function Card({ searchTerm }) {
-  const [products, setProduct] = useState([]);
+function Card({ searchTerm }) { // Receive setCartCount as a prop
+  const [products, setProducts] = useState([]);
+  const [cartCount, setCartCount] = useState(0);
 
   const filehandle = async () => {
     try {
       const res = await axios.get('http://localhost:8004/card');
       if (res.data && res.data.length > 0) {
-        setProduct(res.data);
+        setProducts(res.data);
       } else {
         alert('No data available');
       }
@@ -24,8 +25,8 @@ function Card({ searchTerm }) {
 
   const handleAdd = async (pid, name) => {
     try {
-      const userid = localStorage.getItem('userid');
-      if (!userid) {
+      const userId = localStorage.getItem('userid');
+      if (!userId) {
         toast.error('User is not logged in');
         return;
       }
@@ -33,23 +34,23 @@ function Card({ searchTerm }) {
       const res = await axios.post('http://localhost:8004/card1', {
         pid,
         quantity: 1,
-        userid,
+        userId,
       });
-
+    
       console.log(res);
       toast.success(`${name} added to the cart`);
+
+      // Update cart count here
+      setCartCount(prevCount => prevCount + 1); // Increment cart count
     } catch (error) {
       console.error(error);
-      alert('Unable to connect');
     }
   };
 
   // Apply filtering logic based on the search term
   const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.trim().toLowerCase()) // Ensure case-insensitive and trimmed search
+    product.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
   );
-
- 
 
   return (
     <div className='min-w-full flex flex-wrap justify-between border px-2 py-4'>
@@ -60,23 +61,14 @@ function Card({ searchTerm }) {
               <img
                 src={`http://localhost:8004/${product.photo}`}
                 alt={product.name}
-                name='photo'
                 className='w-full h-40 object-cover'
               />
-              <h1 className='mt-2 text-lg font-semibold' name='name'>
-                {product.name}
-              </h1>
-              <p className='mt-1 text-gray-600 text-center' name='description'>
-                {product.description}
-              </p>
+              <h1 className='mt-2 text-lg font-semibold'>{product.name}</h1>
+              <p className='mt-1 text-gray-600 text-center'>{product.description}</p>
 
               <div className='flex w-full justify-between mt-4 mb-3 mx-2'>
-                <p className='mx-2' name='price'>
-                  ₹{product.price}
-                </p>
-                <p className='mx-2' name='category'>
-                  {product.category}
-                </p>
+                <p className='mx-2'>₹{product.price}</p>
+                <p className='mx-2'>{product.category}</p>
               </div>
               <button
                 className='mt-auto bg-blue-500 text-white py-1 px-4 rounded'
@@ -85,7 +77,6 @@ function Card({ searchTerm }) {
                 Add to Cart
               </button>
             </div>
-            <ToastContainer position='bottom-right' autoClose={1000} hideProgressBar={false} />
           </div>
         ))
       ) : (
@@ -93,6 +84,7 @@ function Card({ searchTerm }) {
           <h1>No products found</h1>
         </div>
       )}
+      <ToastContainer position='bottom-right' autoClose={1000} hideProgressBar={false} />
     </div>
   );
 }

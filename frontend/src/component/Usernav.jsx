@@ -3,36 +3,51 @@ import img from '../admin/images/ubereats.png';
 import cartIcon from '../admin/images/trolley.png';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { FaShoppingCart } from 'react-icons/fa';
 
-function Usernav({ setSearchTerm }) {
+function Usernav({ cartCount, setCartCount,setSearchTerm  }) {
   const navigate = useNavigate();
-  const [image,setImage]=useState(null);
-  const [name,setName]=useState('')
+  const [image, setImage] = useState(null);
+  const [name, setName] = useState('');
 
-  const userId = localStorage.getItem('userid')
+  const userId = localStorage.getItem('userid');
 
   const fetchData = async () => {
     try {
-        console.log("Fetching profile for userId:", userId); // Log the userId
-        const res = await axios.post('http://localhost:8004/profile', { userId });
-        
-        if (res.data.length > 0) {
-            const profile = res.data[0]; // Assuming you're fetching one user
-            setImage(profile.image);
-            setName(profile.username);
-            console.log(profile);
-        } else {
-            console.log("No profile data returned"); // Log when no data is returned
-        }
+      console.log("Fetching profile for userId:", userId);
+      const res = await axios.post('http://localhost:8004/profile', { userId });
+      
+      if (res.data.length > 0) {
+        const profile = res.data[0];
+        setImage(profile.image);
+        setName(profile.username);
+        console.log(profile);
+      } else {
+        console.log("No profile data returned");
+      }
     } catch (error) {
-        console.error("Error fetching profile:", error); // Log the error
+      console.error("Error fetching profile:", error);
     }
-};
- 
- 
-  useEffect(()=>{
-    fetchData()
-  },[])
+  };
+
+  const cart = async () => {
+    try {
+      const res = await axios.post('http://localhost:8004/cartCount', { userId });
+      if (res.data) {
+        setCartCount(res.data.count);
+        console.log(res.data.count);
+      } else {
+        console.log("No data returned");
+      }
+    } catch (error) {
+      console.error("Error fetching cart count:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    cart();
+  }, []);
 
   const handleLog = () => {
     localStorage.clear();
@@ -62,28 +77,28 @@ function Usernav({ setSearchTerm }) {
                   <Link to={'/user/contact'}>Contact</Link>
                 </li>
                 <li className=''>
-                  {/* Search bar */}
                   <input
                     type='search'
                     className='outline-none text-black px-2 py-1 rounded'
                     placeholder='Search dishes...'
-                    onChange={handleSearchChange} // Update search term on change
+                    onChange={handleSearchChange}
                   />
                 </li>
               </ul>
             </div>
           </div>
           <div className='flex items-center space-x-8'>
-          <span className='hover:underline cursor-pointer'>
+            <span className='hover:underline cursor-pointer'>
               <Link to={'/user/uerupdateprofile'}>User Profile</Link>
             </span>
             <img src={`http://localhost:8004/${image}`} alt={name} className='w-12 h-12 rounded-full' />
             <span>{name}</span>
-            <span className='hover:underline cursor-pointer'>
-            <Link to={'/user/cart'}>
-                            <img src={cartIcon} alt="Cart" className='w-8 h-8 cursor-pointer' />
-                        </Link>
-            </span>
+            <Link to="/user/cart" className="relative">
+              <FaShoppingCart className="text-white text-2xl" />
+              {cartCount > 0 && (
+                <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">{cartCount}</span>
+              )}
+            </Link>
             <button className='px-4 py-2 bg-red-500 rounded hover:bg-red-600' onClick={handleLog}>
               Logout
             </button>
