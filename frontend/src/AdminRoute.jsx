@@ -4,8 +4,12 @@ import { Outlet } from 'react-router-dom';
 import AdminNav from './component/AdminNav';
 import Sidebar from './component/Sidebar';
 
+
 function AdminRoute() {
     return (
+       
+
+      
         <div className="flex h-screen">
             {/* Sidebar fixed on the left */}
             <div className="w-1/4 h-full fixed top-0 left-0">
@@ -22,6 +26,7 @@ function AdminRoute() {
                 </div>
             </div>
         </div>
+        
     );
 }
 

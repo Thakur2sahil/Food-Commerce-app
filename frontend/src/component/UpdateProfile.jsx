@@ -3,25 +3,21 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 
-function UpdateUserProfile() {
-    const [username, setUsername] = useState('');
+function UpdateProfile({ setUsername, setImage }) {
+    const [username, setUsernameState] = useState('');
     const [email, setEmail] = useState('');
     const [file, setFile] = useState(null);
     const fileInputRef = useRef(null);
-    const navigate = useNavigate()
-
+    const navigate = useNavigate();
     const userId = localStorage.getItem('userid');
 
-    // Fetch profile data from the server
     const fetchData = async () => {
-        const userId = localStorage.getItem('userid');
         try {
             const res = await axios.post('http://localhost:8004/profile', { userId });
-            if (res.data && res.data.length > 0) {
+            if (res.data.length > 0) {
                 const profile = res.data[0];
-                setUsername(profile.username);
+                setUsernameState(profile.username);
                 setEmail(profile.email);
-                
             } else {
                 console.log("No data available");
             }
@@ -34,23 +30,16 @@ function UpdateUserProfile() {
     const resetForm = () => {
         setFile(null);
         if (fileInputRef.current) {
-            fileInputRef.current.value = ''; // Reset the file input
+            fileInputRef.current.value = '';
         }
     };
 
-    // Handle form submission for updating profile
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-   
-        if (!userId) {
-            return toast.error('User ID is missing');
-        }
-
         const formData = new FormData();
         formData.append('userid', userId);
-        if (username) formData.append('username', username);
-        if (email) formData.append('email', email);
+        formData.append('username', username);
+        formData.append('email', email);
         if (file) formData.append('file', file);
 
         try {
@@ -61,11 +50,12 @@ function UpdateUserProfile() {
             if (res.status === 200) {
                 toast.success(res.data.message || "Profile updated successfully!");
                 resetForm();
-                const { username, image } = res.data.user;
-                localStorage.setItem('name', username);
-                localStorage.setItem('photo', image);
-                fetchData(); // Refresh data after update
-                navigate('/admin/newproduct')
+                const { username: updatedUsername, image: updatedImage } = res.data.user;
+                localStorage.setItem('name', updatedUsername);
+                localStorage.setItem('photo', updatedImage);
+                setUsername(updatedUsername);
+                setImage(updatedImage);
+                navigate('/admin/newproduct');
             } else {
                 toast.error("Unexpected response status!");
             }
@@ -75,16 +65,14 @@ function UpdateUserProfile() {
         }
     };
 
-    // Handle password reset
-    const handleResetPassword = async () => {
-        navigate('/admin/reset',{
-            state: userId
-        })
-    };
-
     useEffect(() => {
         fetchData();
     }, []);
+    const handleResetPassword = async () => {
+        navigate('/user/reset',{
+            state: userId
+        })
+    };
 
     return (
         <div className="max-w-2xl mx-auto p-6 bg-gray-100 rounded-lg shadow-md mt-10">
@@ -95,7 +83,7 @@ function UpdateUserProfile() {
                     <input
                         type="text"
                         value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        onChange={(e) => setUsernameState(e.target.value)}
                         className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
@@ -119,6 +107,7 @@ function UpdateUserProfile() {
                 </div>
                 <div className="text-center space-x-8">
                     <button
+                    onClick={handleSubmit}
                         type="submit"
                         className="bg-blue-600 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
@@ -131,14 +120,10 @@ function UpdateUserProfile() {
                     Reset Password
                 </button>
                 </div>
-               
             </form>
-            <div className="text-center mt-4">
-               
-            </div>
             <ToastContainer position="top-right" autoClose={1000} hideProgressBar={false} closeOnClick pauseOnFocusLoss draggable pauseOnHover />
         </div>
     );
 }
 
-export default UpdateUserProfile;
+export default UpdateProfile;

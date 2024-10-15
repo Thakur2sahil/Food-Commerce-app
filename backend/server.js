@@ -1164,5 +1164,24 @@ app.post('/cartCount', async (req, res) => {
 });
 
 
+app.get('/cart/:userId', async (req, res) => {
+    const { userId } = req.params;
+  
+    try {
+      const cartItems = await db.query(
+            `SELECT sahil.cart.id, sahil.products.name, sahil.products.price, sahil.products.photo, sahil.products.discount, sahil.cart.quantity, sahil.cart.added_at 
+            FROM sahil.cart 
+            JOIN sahil.products ON sahil.cart.product_id = sahil.products.id 
+            WHERE sahil.cart.user_id = $1`,
+        [userId]
+      );
+      res.json(cartItems.rows);
+    } catch (err) {
+      console.error('Database error:', err.message);
+      res.status(500).send('Server error');
+    }
+  });
+
+
 app.listen(8004, () => {console.log('Listening on port 8004');
 }); 

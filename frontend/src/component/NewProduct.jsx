@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 
 function NewProduct() {
@@ -12,6 +12,7 @@ function NewProduct() {
 
     const [image, setImage] = useState(null);
     const [category, setCategory] = useState('');
+    const fileInputRef = useRef(null); // Create a ref for the file input
 
     const handleChange = (e) => {
         setValue(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -26,6 +27,11 @@ function NewProduct() {
         });
         setImage(null);
         setCategory('');
+        
+        // Reset the file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''; // Clear the file input
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -60,10 +66,10 @@ function NewProduct() {
             });
             console.log(res);
             toast.success("The food has been registered!");
-            handleReset(); // Reset the form
+            handleReset(); // Reset the form on success
         } catch (err) {
             console.error(err);
-            toast.error("Registration failed");
+            toast.error(" Failed to register the food" );
         }
     };
 
@@ -78,6 +84,7 @@ function NewProduct() {
                             type='text'
                             name='name'
                             placeholder='Enter your Product name'
+                            value={value.name}
                             onChange={handleChange}
                             className="w-full border border-gray-300 rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -88,6 +95,7 @@ function NewProduct() {
                             type='number'
                             name='price'
                             placeholder='Enter your product price'
+                            value={value.price}
                             onChange={handleChange}
                             className="w-full border border-gray-300 rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -96,6 +104,7 @@ function NewProduct() {
                         <label className="block text-sm font-medium mb-1 text-gray-700">Upload Product Image</label>
                         <input
                             type='file'
+                            ref={fileInputRef} // Attach the ref here
                             onChange={(e) => setImage(e.target.files[0])}
                             className="w-full border border-gray-300 rounded-md p-1 focus:outline-none"
                         />
@@ -104,6 +113,7 @@ function NewProduct() {
                         <label className="block text-sm font-medium mb-1 text-gray-700">Category</label>
                         <select
                             name='category'
+                            value={category}
                             className="w-full border border-gray-300 rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             onChange={(e) => setCategory(e.target.value)}
                         >
@@ -122,6 +132,7 @@ function NewProduct() {
                         <label className="block text-sm font-medium mb-1 text-gray-700">Description</label>
                         <textarea 
                             name='description' 
+                            value={value.description}
                             onChange={handleChange}
                             className="w-full border border-gray-300 rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-blue-500" 
                         />
@@ -132,6 +143,7 @@ function NewProduct() {
                             type='number'
                             name='discount'
                             placeholder='Enter the discount percentage'
+                            value={value.discount}
                             onChange={handleChange}
                             className="w-full border border-gray-300 rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />

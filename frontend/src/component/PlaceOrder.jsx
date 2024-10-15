@@ -23,9 +23,11 @@ function PlaceOrder() {
                 toast.success("Order placed successfully!");
                 console.log(res);
                
+               setTimeout(()=>{
                 navigate('/user/ordercard' ,{
                     state: { totalAmount  }
                   })
+               },2000)
             } catch (error) {
                 console.error(error);
                 // alert("Error placing the order.");

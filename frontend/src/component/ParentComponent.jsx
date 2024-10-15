@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import Usernav from './Usernav';
-import Card from './Card';
+import UpdateUserProfile from './UpdateUserProfile';
 
 function ParentComponent() {
-  const [searchTerm, setSearchTerm] = useState('');
+    const [username, setUsername] = useState('');
+    const [image, setImage] = useState('');
 
-  return (
-    <div>
-      <Usernav setSearchTerm={setSearchTerm} />
-      <Card searchTerm={searchTerm} />
-    </div>
-  );
+    return (
+        <div>
+            <Usernav username={username} image={image} />
+            <UpdateUserProfile setUsername={setUsername} setImage={setImage} />
+        </div>
+    );
 }
 
 export default ParentComponent;

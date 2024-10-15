@@ -1,7 +1,8 @@
 import axios from 'axios';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
+
 
 function UpdateUserProfile() {
     const [username, setUsername] = useState('');
@@ -59,13 +60,16 @@ function UpdateUserProfile() {
             });
 
             if (res.status === 200) {
-                toast.success(res.data.message || "Profile updated successfully!");
+               
                 resetForm();
                 const { username, image } = res.data.user;
                 localStorage.setItem('name', username);
                 localStorage.setItem('photo', image);
                 fetchData(); // Refresh data after update
-                navigate('/user/userhome')
+                toast.success(`${username} your profile is update succesfully`)
+                // navigate('/user/userhome')
+                setTimeout(()=>{
+                    navigate('/user/userhome' )},2000)
             } else {
                 toast.error("Unexpected response status!");
             }

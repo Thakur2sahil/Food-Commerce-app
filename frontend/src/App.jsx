@@ -12,7 +12,6 @@ import Updateproduct from './component/Updateproduct'
 import Cart from './component/Cart'
 import PlaceOrder from './component/PlaceOrder'
 import AdminRoute from './AdminRoute'
-import Layout from './component/layout'
 import UpdateProfile from './component/UpdateProfile'
 import DeleteProduct from './component/DeleteProduct'
 import ProductUpdate from './component/ProductUpdate'
@@ -24,122 +23,125 @@ import AdminHome from './component/AdminHome'
 import UserRequest from './component/UserRequest'
 import UpdateUserProfile from './component/UpdateUserProfile'
 import ResetPassword from './component/ResetPassword'
+import Layout from './layout'
 
 
 
 
 const App = () => {
 
-  const roll = localStorage.getItem('roll')
-  
-  const router = createBrowserRouter([
-    
-    {
-      path:'/reset',
-      element:<ResetPassword/>
-    },
-    {
-      path:'/user/userhome',
-      element:<UserDashboard/>
-    },
-    {
-      path:'/',
-      element:<Login/>
-    },
-    {
-      path:'/signup',
-      element:<Registration/>
-    },
 
-    {
-      path:'/admin',
-      element:<AdminRoute/>,
-      children:[
-        {
-          path:'/admin/newproduct',
-          element:<NewProduct/>
-        },
-        {
-          path:'/admin/adminhome',
-          element:<AdminHome/>
-        },
-        {
-          path:'/admin/ourproduct',
-          element:<OurProduct/>
-        },
-        {
-          path:'/admin/updateproduct',
-          element:<Updateproduct/>
-        },
-        {
-          path:'/admin/updateprofile',
-          element:<UpdateProfile/>
-        },
+const roll = localStorage.getItem('roll')
 
-        {
-          path:'/admin/productupdate',
-          element:<ProductUpdate/>
-        },
-        {
-          path:'/admin/reset',
-          element:<ResetPassword/>
-        },
-        {
-          path:'/admin/deleteproduct',
-          element:<DeleteProduct/>
-        },
-        {
-          path:'/admin/orderrequest',
-          element:<OrderRequest/>
-        },
-        {
-          path:'/admin/userrequest',
-          element:<UserRequest/>
-        },
+const router = createBrowserRouter([
   
-      ]
-    },
-    {
-      path:'/user',
-      element:<Layout/>,
-      children:[
-        {
-          path:'/user/cart',
-          element:<Cart/>
-        },
-        {
-          path:'/user/contact',
-          element:<Contact/>
-        },
-        {
-          path:'/user/about',
-          element:<About/>
-        },
-        {
-          path:'/user/ordercard',
-          element:<OrderCard/>
-        },
-        {
-          path:'/user/purchasehistory',
-          element:<PurchaseHistory/>
-        },
-        {
-          path:'/user/uerupdateprofile',
-          element:<UpdateUserProfile/>
-        },
-        {
-          path:'/user/reset',
-          element:<ResetPassword/>
-        },
-        
-        {
-          path:'/user/placeorder',
-          element:<PlaceOrder/>
-        }
-      ]
-    }
-  ])
-  return <RouterProvider router={router} />;
+  {
+    path:'/reset',
+    element:<ResetPassword/>
+  },
+  {
+    path:'/user/userhome',
+    element:<UserDashboard/>
+  },
+  {
+    path:'/',
+    element:<Login/>
+  },
+  {
+    path:'/signup',
+    element:<Registration/>
+  },
+
+  {
+    path:'/admin',
+    element:<AdminRoute/>,
+    children:[
+      {
+        path:'/admin/newproduct',
+        element:<NewProduct/>
+      },
+      {
+        path:'/admin/adminhome',
+        element:<AdminHome/>
+      },
+      {
+        path:'/admin/ourproduct',
+        element:<OurProduct/>
+      },
+      {
+        path:'/admin/updateproduct',
+        element:<Updateproduct/>
+      },
+      {
+        path:'/admin/updateprofile',
+        element:<UpdateProfile/>
+      },
+
+      {
+        path:'/admin/productupdate',
+        element:<ProductUpdate/>
+      },
+      {
+        path:'/admin/reset',
+        element:<ResetPassword/>
+      },
+      {
+        path:'/admin/deleteproduct',
+        element:<DeleteProduct/>
+      },
+      {
+        path:'/admin/orderrequest',
+        element:<OrderRequest/>
+      },
+      {
+        path:'/admin/userrequest',
+        element:<UserRequest/>
+      },
+
+    ]
+  },
+  {
+    path:'/user',
+    element:<Layout/>,
+    children:[
+      {
+        path:'/user/cart',
+        element:<Cart/>
+      },
+      {
+        path:'/user/contact',
+        element:<Contact/>
+      },
+      {
+        path:'/user/about',
+        element:<About/>
+      },
+      {
+        path:'/user/ordercard',
+        element:<OrderCard/>
+      },
+      {
+        path:'/user/purchasehistory',
+        element:<PurchaseHistory/>
+      },
+      {
+        path:'/user/userupdateprofile',
+        element:<UpdateUserProfile/>
+      },
+      {
+        path:'/user/reset',
+        element:<ResetPassword/>
+      },
+      
+      {
+        path:'/user/placeorder',
+        element:<PlaceOrder/>
+      }
+    ]
+  }
+])
+return <RouterProvider router={router} />;
+
 };
 
 
