@@ -1,15 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import img1 from '../admin/images/ubereats.png'; // Logo or admin image
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-function AdminNav({ username, image }) {
+function AdminNav() {
     const navigate = useNavigate();
+    const [username, setUsername] = useState('');
+    const [image, setImage] = useState(null);
 
-    console.log(username)
+    useEffect(() => {
+        const fetchprofile = async () => {
+            const userId = localStorage.getItem('userid');
+            if (!userId) return; // Early return if userId is not available
+
+            try {
+                const res = await axios.get(`http://localhost:8004/profiledata?userId=${userId}`); // Correct URL
+                if (res.data) {
+                    setImage(res.data.image);
+                    setUsername(res.data.username);
+                    console.log(res.data)
+                }
+            } catch (error) {
+                console.error('Error fetching profile data:', error); // Improved error message
+            }
+        };
+        fetchprofile();
+    }, []);
+
+    const handleClick = () => {
+        navigate('/admin/updateprofile');
+    };
 
     const handleLogout = () => {
         localStorage.clear();
-        navigate('/');
+        window.location.href = '/'; // Redirect to home page
     };
 
     return (
@@ -19,17 +43,19 @@ function AdminNav({ username, image }) {
                     <img src={img1} alt="Admin Logo" className="h-10 w-auto" />
                 </div>
             </div>
-
             <div className="flex items-center mr-5">
-                <span className='hover:underline cursor-pointer text-lg mx-3 text-white font-semibold'>
-                    <Link to={'/admin/updateprofile'}>User Profile</Link>
+                <span
+                    onClick={handleClick}
+                    className='hover:underline cursor-pointer text-lg mx-3 text-white font-semibold'
+                >
+                    User Profile
                 </span>
                 <div className="flex items-center text-white">
-                    <img src={`http://localhost:8004/${image}`} alt="User Profile" className="h-8 w-8 rounded-full mx-3" />
+                    {image && <img src={`http://localhost:8004/${image}`} alt="User Profile" className="h-8 w-8 rounded-full mx-3" />}
                     <h2 className="text-lg mx-3">{username}</h2>
                 </div>
-                <button 
-                    className="bg-red-500 hover:bg-red-600 ml-3 text-white font-semibold py-2 px-4 rounded-md" 
+                <button
+                    className="bg-red-500 hover:bg-red-600 ml-3 text-white font-semibold py-2 px-4 rounded-md"
                     onClick={handleLogout}
                 >
                     Logout

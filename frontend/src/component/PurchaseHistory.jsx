@@ -3,6 +3,7 @@ import axios from 'axios';
 
 function PurchaseHistory() {
     const [orders, setOrders] = useState([]);
+    const [ratings, setRatings] = useState({});
 
     const userId = localStorage.getItem('userid')
 
@@ -37,6 +38,7 @@ function PurchaseHistory() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -54,6 +56,22 @@ function PurchaseHistory() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.quantity}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.status}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.date}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">  {order.status === 'accepted' ? (
+                          <>
+                            <StarRating
+                              rating={ratings[order.id] || 0}
+                              onRatingChange={(value) => handleRatingChange(order.id, value)}
+                            />
+                            <button
+                              onClick={() => handleRatingSubmit(order.id)}
+                              className="ml-2 bg-blue-500 text-white px-2 py-1 rounded"
+                            >
+                              Submit
+                            </button>
+                          </>
+                        ) : (
+                          <p>N/A</p>
+                        )}</td>
                         </tr>
                     ))}
                 </tbody>

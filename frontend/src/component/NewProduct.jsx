@@ -1,5 +1,6 @@
 import axios from 'axios';
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 
 function NewProduct() {
@@ -9,6 +10,8 @@ function NewProduct() {
         discount: '',
         description: '',
     });
+
+    const navigate = useNavigate()
 
     const [image, setImage] = useState(null);
     const [category, setCategory] = useState('');
@@ -66,6 +69,7 @@ function NewProduct() {
             });
             console.log(res);
             toast.success("The food has been registered!");
+            setTimeout(()=>{navigate('/admin/updateproduct')},2000)
             handleReset(); // Reset the form on success
         } catch (err) {
             console.error(err);

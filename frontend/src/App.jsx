@@ -24,6 +24,7 @@ import UserRequest from './component/UserRequest'
 import UpdateUserProfile from './component/UpdateUserProfile'
 import ResetPassword from './component/ResetPassword'
 import Layout from './layout'
+import AdminDashBoard from './component/AdminDashBoard'
 
 
 
@@ -51,15 +52,16 @@ const router = createBrowserRouter([
     path:'/signup',
     element:<Registration/>
   },
+  {
+    path:'/admin/newproduct',
+    element:<AdminDashBoard/>
+  },
 
   {
     path:'/admin',
     element:<AdminRoute/>,
     children:[
-      {
-        path:'/admin/newproduct',
-        element:<NewProduct/>
-      },
+      
       {
         path:'/admin/adminhome',
         element:<AdminHome/>

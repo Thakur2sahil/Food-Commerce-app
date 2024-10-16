@@ -34,6 +34,10 @@ const Signup = () => {
       toast.error('Please fill in your password.');
       return;
     }
+    if (!image) {
+      toast.error('Please fill in your Image.');
+      return;
+    }
 
     const formData = new FormData();
     formData.append('username', username);

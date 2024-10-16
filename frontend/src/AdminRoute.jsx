@@ -7,8 +7,6 @@ import Sidebar from './component/Sidebar';
 
 function AdminRoute() {
     return (
-       
-
       
         <div className="flex h-screen">
             {/* Sidebar fixed on the left */}

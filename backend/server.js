@@ -380,6 +380,14 @@ function generateRandomOrderId() {
         // Begin transaction
         await db.query('BEGIN');
 
+        // Get user details for email (assuming you have a users table)
+        const userResult = await db.query('SELECT username, email, full_name FROM sahil.users WHERE id = $1', [userId]);
+        if (userResult.rows.length === 0) {
+            throw new Error('User not found');
+        }
+
+        const { username, email, full_name: fullName } = userResult.rows[0];
+
         // Get all cart items for the user with product details
         const cartItemsResult = await db.query(`
           SELECT cart.id, cart.product_id, cart.quantity, products.name as product_name, products.price
@@ -387,8 +395,12 @@ function generateRandomOrderId() {
           JOIN sahil.products products ON cart.product_id = products.id
           WHERE cart.user_id = $1
         `, [userId]);
-        
+
         const cartItems = cartItemsResult.rows;
+
+        if (cartItems.length === 0) {
+            throw new Error('No items in the cart');
+        }
 
         // Insert cart items into order_history with the same unique order ID
         for (let item of cartItems) {
@@ -407,6 +419,21 @@ function generateRandomOrderId() {
         // Commit transaction
         await db.query('COMMIT');
 
+        // Prepare email content
+        const emailSubject = 'Your Order Has Been Placed';
+        const emailBody = `
+            Hello ${fullName},<br><br>
+            We are pleased to inform you that your order with ID <strong>${uniqueOrderId}</strong> has been successfully placed.<br>
+            Please wait for the admin to approve your order!<br><br>
+            If you have any questions or need further assistance, please feel free to contact us.<br><br>
+            Best regards,<br>
+            Your Company Name
+        `;
+
+        // Send email to the user notifying them about their order placement
+        await sendEmail(email, emailSubject, emailBody);
+
+        // Respond with success
         res.status(200).json({ message: 'Order placed successfully', orderId: uniqueOrderId });
     } catch (err) {
         // Rollback transaction in case of error
@@ -1182,6 +1209,37 @@ app.get('/cart/:userId', async (req, res) => {
     }
   });
 
+
+  app.get('/profiledata', async (req, res) => {
+    const { userId } = req.query; // Changed from req.params to req.query
+
+    const select = `SELECT * FROM sahil.users WHERE id = $1`;
+
+    db.query(select, [userId], (err, data) => {
+        if (err) {
+            return res.status(500).json(err);
+        }
+        if (data.rows.length > 0) { // Use .length instead of > 0
+            console.log(data.rows);
+            return res.status(200).json(data.rows[0]); // Return the first row directly
+        } else {
+            return res.status(400).json('No data found');
+        }
+    });
+});
+
+
+// app.post('/rateProduct', async (req, res) => {
+//     const { userId, orderId, rating } = req.body;
+
+//     // Save the rating to the database (this is just a conceptual example)
+//     try {
+//         await db.query('INSERT INTO ratings (userId, orderId, rating) VALUES (?, ?, ?)', [userId, orderId, rating]);
+//         res.status(200).send('Rating saved');
+//     } catch (error) {
+//         res.status(500).send('Error saving rating');
+//     }
+// });
 
 app.listen(8004, () => {console.log('Listening on port 8004');
 }); 
