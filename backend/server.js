@@ -875,27 +875,6 @@ app.post('/updaterating', async (req, res) => {
 });
 
 
-app.get('order-history', async (req, res) => {
-    try {
-      const client = await pool.connect();
-      const result = await client.query(`
-        SELECT 
-          to_char(created_at, 'Month') AS month,
-          COUNT(*) AS total_orders
-        FROM 
-          aman.order_history
-        GROUP BY 
-          to_char(created_at, 'Month')
-        ORDER BY 
-          MIN(EXTRACT(MONTH FROM created_at));
-      `);
-      client.release();
-      res.json(result.rows);
-    } catch (err) {
-      console.error('Error fetching order history:', err);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
   
 
   app.get('/order-history', async (req, res) => {
@@ -1229,17 +1208,39 @@ app.get('/cart/:userId', async (req, res) => {
 });
 
 
-// app.post('/rateProduct', async (req, res) => {
-//     const { userId, orderId, rating } = req.body;
+app.post('/submit-rating', async (req, res) => {
+    const { userId, orderId, rating } = req.body;
+    
+    try {
+        // Fetch product_id from the order
+        const orderResult = await db.query('SELECT product_id FROM sahil.order_history WHERE id = $1 AND user_id = $2', [orderId, userId]);
+        if (orderResult.rows.length === 0) {
+            return res.status(404).send('Order not found');
+        }
+  
+        const { product_id } = orderResult.rows[0];
+  
+        // Insert rating into sahil.order_history table
+        await db.query('UPDATE sahil.order_history SET rating = $1 WHERE id = $2', [rating, orderId]);
+  
+        // Fetch current rating and rating count from sahil.products
+        const productResult = await db.query('SELECT rating, rating_count FROM sahil.products WHERE id = $1', [product_id]);
+        const { rating: currentRating, rating_count: ratingCount } = productResult.rows[0];
+  
+        // Calculate new rating and increment count
+        const newRating = (currentRating * ratingCount + rating) / (ratingCount + 1);
+        const newRatingCount = ratingCount + 1;
+  
+        // Update product rating and rating count in the sahil.products table
+        await db.query('UPDATE sahil.products SET rating = $1, rating_count = $2 WHERE id = $3', [newRating, newRatingCount, product_id]);
+  
+        res.send('Rating submitted successfully');
+    } catch (error) {
+        console.error('Error submitting rating:', error);
+        res.status(500).send('Server error');
+    }
+});
 
-//     // Save the rating to the database (this is just a conceptual example)
-//     try {
-//         await db.query('INSERT INTO ratings (userId, orderId, rating) VALUES (?, ?, ?)', [userId, orderId, rating]);
-//         res.status(200).send('Rating saved');
-//     } catch (error) {
-//         res.status(500).send('Error saving rating');
-//     }
-// });
 
 app.listen(8004, () => {console.log('Listening on port 8004');
 }); 
