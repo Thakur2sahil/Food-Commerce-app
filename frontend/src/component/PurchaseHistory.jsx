@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import StarRating from './StarRating'; 
+import { toast, ToastContainer } from 'react-toastify';
 
 function PurchaseHistory() {
     const [orders, setOrders] = useState([]);
@@ -18,29 +19,29 @@ function PurchaseHistory() {
     };
 
     // Handle rating change
-   
-  const handleRatingChange = (orderId, value) => {
-    setRatings(prevRatings => ({
-      ...prevRatings,
-      [orderId]: value,   
-    }));
-  };
+    const handleRatingChange = (orderId, value) => {
+        setRatings(prevRatings => ({
+          ...prevRatings,
+          [orderId]: value,
+        }));
+    };
 
-  const handleRatingSubmit = async (orderId) => {
-    try {
-      const userId = localStorage.getItem('userId');
-      await axios.post(`http://localhost:8004/submit-rating`, {
-        userId,
-        orderId,
-        rating: ratings[orderId],
-      });
-      toast.success(`Rating submitted successfully for order ID: ${orderId}`);
-    } catch (error) {
-      console.error('Error submitting rating:', error);
-      toast.error('Failed to submit rating. Please try again.');
-    }
-  };
-
+    const handleRatingSubmit = async (orderId) => {
+        try {
+            const userId = localStorage.getItem('userid');
+            await axios.post(`http://localhost:8004/submit-rating`, {
+                userId,
+                orderId,
+                rating: ratings[orderId],
+            });
+            toast.success(`Rating submitted successfully for order ID: ${orderId}`);
+            fetchData();
+            // Optionally refresh orders or ratings after submission
+        } catch (error) {
+            console.error('Error submitting rating:', error);
+            toast.error('Failed to submit rating. Please try again.');
+        }
+    };
 
     // Fetch data when the component mounts
     useEffect(() => {
@@ -66,7 +67,7 @@ function PurchaseHistory() {
                         </thead>
                         <tbody>
                             {orders.map(order => (
-                                <tr key={order.orderId} className="border-b">
+                                <tr key={order.id} className="border-b">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.order_id}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <img
@@ -75,23 +76,35 @@ function PurchaseHistory() {
                                             className="w-16 h-16 object-cover rounded-md"
                                         />
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.id}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.product_id}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.quantity}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.status}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.date}</td>
                                     <td className="py-2 px-4">
                                         {order.status === 'approved' ? (
                                             <>
-                                                <StarRating
-                                                    rating={ratings[order.id] || 0}
-                                                    onRatingChange={(value) => handleRatingChange(order.id, value)}
-                                                />
-                                                <button
-                                                    onClick={() => handleRatingSubmit(order.id)}
-                                                    className="ml-2 bg-blue-500 text-white px-2 py-1 rounded"
-                                                >
-                                                    Submit
-                                                </button>
+                                                {order.rating ? (
+                                                    <>
+                                                        <StarRating
+                                                            rating={order.rating}
+                                                            onRatingChange={() => {}}
+                                                        />
+                                                       
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <StarRating
+                                                            rating={ratings[order.id] || 0}
+                                                            onRatingChange={(value) => handleRatingChange(order.id, value)}
+                                                        />
+                                                        <button
+                                                            onClick={() => handleRatingSubmit(order.id)}
+                                                            className="ml-2 bg-blue-500 text-white px-2 py-1 rounded"
+                                                        >
+                                                            Submit
+                                                        </button>
+                                                    </>
+                                                )}
                                             </>
                                         ) : (
                                             <p>N/A</p>
@@ -105,6 +118,7 @@ function PurchaseHistory() {
             ) : (
                 <div>No records found</div>
             )}
+            <ToastContainer position="top-right" autoClose={1000} hideProgressBar={false} closeOnClick pauseOnFocusLoss draggable pauseOnHover />
         </div>
     );
 }

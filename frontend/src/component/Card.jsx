@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
-import { useOutletContext } from 'react-router-dom';
+
+function StarRating({ rating }) {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+        stars.push(
+            <span key={i} className={i <= rating ? 'text-yellow-500' : 'text-gray-300'}>
+                ★
+            </span>
+        );
+    }
+    return <div>{stars}</div>;
+}
 
 function Card({ setCartCount, searchTerm }) {
     const [products, setProducts] = useState([]);
@@ -24,25 +35,26 @@ function Card({ setCartCount, searchTerm }) {
     }, []);
 
     const handleAdd = async (pid, name) => {
-      try {
-          const userId = localStorage.getItem('userid');
-          if (!userId) {
-              toast.error('User is not logged in');
-              return;
-          }
+        try {
+            const userId = localStorage.getItem('userid');
+            if (!userId) {
+                toast.error('User is not logged in');
+                return;
+            }
 
-          await axios.post('http://localhost:8004/card1', {
-              pid,
-              quantity: 1,
-              userId,
-          });
+            await axios.post('http://localhost:8004/card1', {
+                pid,
+                quantity: 1,
+                userId,
+            });
 
-          toast.success(`${name} added to the cart`);
-          setCartCount(prevCount => prevCount + 1); // Update the cart count in the parent
-      } catch (error) {
-          console.error(error);
-      }
-  };
+            toast.success(`${name} added to the cart`);
+            setCartCount(prevCount => prevCount + 1);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const filteredProducts = products.filter((product) =>
         product.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
     );
@@ -60,6 +72,7 @@ function Card({ setCartCount, searchTerm }) {
                             />
                             <h1 className='mt-2 text-lg font-semibold'>{product.name}</h1>
                             <p className='mt-1 text-gray-600 text-center'>{product.description}</p>
+                            <StarRating rating={product.rating} />
                             <div className='flex w-full justify-between mt-4 mb-3 mx-2'>
                                 <p className='mx-2'>₹{product.price}</p>
                                 <p className='mx-2'>{product.category}</p>

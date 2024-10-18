@@ -72,9 +72,12 @@ function Cart() {
       return (totalAfterDiscount * 0.18); // 18% CGST
     }
   };
-  const gst = calculateGST();
 
-  const totalAmount = totalAfterDiscount + calculateGST();
+
+  const totalAmount = parseFloat((Number(totalAfterDiscount) + Number(calculateGST())).toFixed(2));
+
+
+  
 
   const calculateTotals = (items) => {
     let totalBefore = 0;
@@ -92,6 +95,9 @@ function Cart() {
     setTotalBeforeDiscount(totalBefore);
     setTotalAfterDiscount(totalAfter);
   };
+
+
+  
 
   const placeOrder = () => {
     navigate('/user/placeorder', {

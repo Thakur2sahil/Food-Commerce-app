@@ -70,7 +70,7 @@ function Usernav({ setSearchTerm, cartCount }) {
                             </ul>
                         </div>
                     </div>
-                    <div className='flex items-center space-x-8'>
+                    <div className='flex items-center space-x-4'>
                         <span className='hover:underline cursor-pointer'>
                             <Link to={'/user/userupdateprofile'}>User Profile</Link>
                         </span>

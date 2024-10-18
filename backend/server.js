@@ -6,7 +6,8 @@ const jwt = require('jsonwebtoken');
 const secretKey = 'your_secret_key';
 const nodemailer = require('nodemailer');
 const { sendEmail } = require('./emailService');
-const fs = require('fs')
+const fs = require('fs');
+const db = require('./db'); 
 
 
 const app = express()
@@ -14,23 +15,7 @@ app.use(cors())
 app.use(express.json())
 app.use('/uploads', express.static('uploads'));
 
-const db = new Client({
-    host:'192.168.1.6',
-    user:'postgres',
-    port:5432,
-    password:'mawai123',
-    database:'php_training'
-})
 
-db.connect()
-.then(res=>{
-    console.log(res)
-    console.log('Connect to database')
-})
-.catch(err=>{
-    console.error(err)
-    console.log("Can't connect to Database")
-})
 
 const storage = multer.diskStorage({
     destination: function(req,file,cb){
@@ -42,7 +27,6 @@ const storage = multer.diskStorage({
 })
 
 const upload = multer({storage})
-
 
 
 app.post('/signup', upload.single('image'), async (req, res) => {
@@ -104,6 +88,7 @@ app.post('/signup', upload.single('image'), async (req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
+
 
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
@@ -387,6 +372,21 @@ function generateRandomOrderId() {
         }
 
         const { username, email, full_name: fullName } = userResult.rows[0];
+        console.log(`${email},${fullName}`);
+        
+
+        await sendEmail(
+            email,
+            'Your Order Has Been Placed',
+            `Hello ${fullName},<br><br>
+            We are pleased to inform you that your order with ID <strong>${uniqueOrderId}</strong> has been successfully placed.<br>
+            Please wait for the admin to approve your order!<br><br>
+            If you have any questions or need further assistance, please feel free to contact us.<br><br>
+            Best regards,<br>
+            Your Company Name`
+        );
+
+
 
         // Get all cart items for the user with product details
         const cartItemsResult = await db.query(`
@@ -420,19 +420,7 @@ function generateRandomOrderId() {
         await db.query('COMMIT');
 
         // Prepare email content
-        const emailSubject = 'Your Order Has Been Placed';
-        const emailBody = `
-            Hello ${fullName},<br><br>
-            We are pleased to inform you that your order with ID <strong>${uniqueOrderId}</strong> has been successfully placed.<br>
-            Please wait for the admin to approve your order!<br><br>
-            If you have any questions or need further assistance, please feel free to contact us.<br><br>
-            Best regards,<br>
-            Your Company Name
-        `;
-
-        // Send email to the user notifying them about their order placement
-        await sendEmail(email, emailSubject, emailBody);
-
+       
         // Respond with success
         res.status(200).json({ message: 'Order placed successfully', orderId: uniqueOrderId });
     } catch (err) {
@@ -733,6 +721,7 @@ app.post('/accept', async (req, res) => {
         }
 
         const { username, email, full_name: fullName } = userResult.rows[0];
+        // console.log(`${email},${fullName}`);
 
         // Prepare email content
         const emailSubject = 'Your Order Has Been Approved';
@@ -786,6 +775,8 @@ app.post('/cancel', async (req, res) => {
 
 
         const { username, email, full_name: fullName } = userResult.rows[0];
+        // console.log(`${email},${fullName}`);
+        
 
         // Prepare email content
         const emailSubject = 'Your Order Has Been Canceled';
@@ -817,7 +808,7 @@ app.post('/purchasehistory',(req,res)=>{
 
     const {userId} = req.body
 
-    const select = "select o.order_id , p.photo as photo, p.id , o.quantity , o.status, o.rating,TO_CHAR(o.created_at, 'YYYY-MM-DD') as date from sahil.order_history as o inner join sahil.products as p on o.product_id = p.id  where user_id =$1  "
+    const select = "select o.order_id ,o.id, p.photo as photo, p.id as product_id , o.quantity ,o.status, o.rating,TO_CHAR(o.created_at, 'YYYY-MM-DD') as date from sahil.order_history as o inner join sahil.products as p on o.product_id = p.id  where user_id =$1  "
 
         db.query(select,[userId],(err,data)=>{
             if(err)
@@ -1210,6 +1201,9 @@ app.get('/cart/:userId', async (req, res) => {
 
 app.post('/submit-rating', async (req, res) => {
     const { userId, orderId, rating } = req.body;
+
+    console.log(`${userId},${orderId},${rating}`);
+    
     
     try {
         // Fetch product_id from the order
@@ -1219,6 +1213,8 @@ app.post('/submit-rating', async (req, res) => {
         }
   
         const { product_id } = orderResult.rows[0];
+        console.log(product_id);
+        
   
         // Insert rating into sahil.order_history table
         await db.query('UPDATE sahil.order_history SET rating = $1 WHERE id = $2', [rating, orderId]);
@@ -1226,6 +1222,9 @@ app.post('/submit-rating', async (req, res) => {
         // Fetch current rating and rating count from sahil.products
         const productResult = await db.query('SELECT rating, rating_count FROM sahil.products WHERE id = $1', [product_id]);
         const { rating: currentRating, rating_count: ratingCount } = productResult.rows[0];
+
+        console.log(`${currentRating},${ratingCount}`);
+        
   
         // Calculate new rating and increment count
         const newRating = (currentRating * ratingCount + rating) / (ratingCount + 1);
