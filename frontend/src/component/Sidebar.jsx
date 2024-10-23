@@ -36,9 +36,9 @@ function Sidebar() {
                     <Link to="/admin/userrequest" className="block text-lg hover:bg-gray-700 px-4 py-2 transition duration-200">
                         <h2>User Request</h2>
                     </Link>
-                    {/* <Link to="/admin/message" className="block text-lg hover:bg-gray-700 px-4 py-2 transition duration-200">
-                        <h2>User Message</h2>
-                    </Link> */}
+                    <Link to="/admin/downloadpdf" className="block text-lg hover:bg-gray-700 px-4 py-2 transition duration-200">
+                        <h2>Download Pdf</h2>
+                    </Link>
 
                     <Link to="/" className="block text-lg hover:bg-gray-700 px-4 py-2 transition duration-200">
                         <h2>Logout</h2>

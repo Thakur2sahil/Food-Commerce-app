@@ -25,6 +25,8 @@ import UpdateUserProfile from './component/UpdateUserProfile'
 import ResetPassword from './component/ResetPassword'
 import Layout from './layout'
 import AdminDashBoard from './component/AdminDashBoard'
+import Download from './component/Download'
+import ProductRating from './component/ProductRating'
 
 
 
@@ -98,6 +100,14 @@ const router = createBrowserRouter([
       {
         path:'/admin/userrequest',
         element:<UserRequest/>
+      },
+      {
+        path:'/admin/downloadpdf',
+        element:<Download/>
+      },
+      {
+        path:'/admin/productrating',
+        element:<ProductRating/>
       },
 
     ]

@@ -1,9 +1,11 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom';
 
 function OurProduct() {
 
     const [products , setProduct] = useState([])
+    const navigate = useNavigate()
             
     const handleget = async () => {
         try {
@@ -24,6 +26,12 @@ function OurProduct() {
         handleget();
     }, []);
     
+    const handlerating = (pid) =>{
+
+        navigate('/admin/productrating', {
+            state: { pid  }
+          });
+    }
    
     return (
      <>
@@ -40,6 +48,7 @@ function OurProduct() {
                         <th className='px-4 py-2 border-b border-gray-300 text-center w-3/12'>Description</th>
                         <th className='px-4 py-2 border-b border-gray-300 text-center w-2/12'>Category</th>
                         <th className='px-4 py-2 border-b border-gray-300 text-center w-2/12'>Photo</th>
+                        <th className='px-4 py-2 border-b border-gray-300 text-center w-2/12'>Rating</th>
                     </tr>
                 </thead>
     
@@ -54,6 +63,12 @@ function OurProduct() {
                                 <td className='px-4 py-2 border-b border-gray-300 text-center'>{product.category}</td>
                                 <td className='px-4 py-2 border-b border-gray-300 text-center'>
                                     <img src={`http://localhost:8004/${product.photo}`} alt={product.name} className='w-24 h-24 object-cover mx-auto' />
+                                </td>
+                                <td className='px-4 py-2 border-b border-gray-300 text-center'>
+                                    <button onClick={()=>handlerating(product.id)}
+                                    className="bg-blue-600 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                         Rating
+                                    </button>
                                 </td>
                             </tr>
                         ))

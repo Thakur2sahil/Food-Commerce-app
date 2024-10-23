@@ -18,7 +18,6 @@ function AdminNav() {
                 if (res.data) {
                     setImage(res.data.image);
                     setUsername(res.data.username);
-                    console.log(res.data)
                 }
             } catch (error) {
                 console.error('Error fetching profile data:', error); // Improved error message

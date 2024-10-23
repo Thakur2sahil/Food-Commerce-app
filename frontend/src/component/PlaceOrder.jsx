@@ -19,7 +19,7 @@ function PlaceOrder() {
         if (inputAmount === totalAmount) {
             try {
                 // Make the axios call
-                const res = await axios.post('http://localhost:8004/orderpage', { userId });
+                const res = await axios.post('http://localhost:8004/orderpage', { userId ,totalAmount});
                 toast.success("Order placed successfully!");
                 console.log(res);
                

@@ -2,17 +2,34 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 
+
 function StarRating({ rating }) {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
-        stars.push(
-            <span key={i} className={i <= rating ? 'text-yellow-500' : 'text-gray-300'}>
-                ★
-            </span>
-        );
+        if (i <= Math.floor(rating)) {
+            stars.push(
+                <span key={i} className='text-yellow-500'>
+                  
+                    <i className="fa fa-star"></i>
+                </span>
+            );
+        } else if (i === Math.ceil(rating) && rating % 1 !== 0) {
+            stars.push(
+                <span key={i} className='text-yellow-500'>
+                   <i className="fa fa-star-half-alt"></i>
+                </span>
+            );
+        } else {
+            stars.push(
+                <span key={i} className='text-gray-300'>
+                  <i className="far fa-star"></i>   
+                </span>
+            );
+        }
     }
     return <div>{stars}</div>;
 }
+
 
 function Card({ setCartCount, searchTerm }) {
     const [products, setProducts] = useState([]);

@@ -11,6 +11,7 @@ async function sendEmail(to, subject, htmlContent) {
       auth: {
         user: 'sahilthakur14691@gmail.com', // Your Gmail email address
         pass: 'lmqxtbbelawugrpm ', // Your Gmail app-specific password
+        // pass: 'ofbslfzwskztwcca', // Your Gmail app-specific password
       },
     });
 

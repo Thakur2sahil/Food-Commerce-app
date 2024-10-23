@@ -9,7 +9,6 @@ const { sendEmail } = require('./emailService');
 const fs = require('fs');
 const db = require('./db'); 
 
-
 const app = express()
 app.use(cors())
 app.use(express.json())
@@ -356,80 +355,77 @@ function generateRandomOrderId() {
   
   // Example usage:
  
-  app.post('/orderpage', async (req, res) => {
-    const { userId } = req.body;
+    app.post('/orderpage', async (req, res) => {
+        const { userId ,totalAmount} = req.body;
 
-    const uniqueOrderId = generateRandomOrderId();
+        const uniqueOrderId = generateRandomOrderId();
 
-    try {
-        // Begin transaction
-        await db.query('BEGIN');
+        try {
+            // Begin transaction
+            await db.query('BEGIN');
 
-        // Get user details for email (assuming you have a users table)
-        const userResult = await db.query('SELECT username, email, full_name FROM sahil.users WHERE id = $1', [userId]);
-        if (userResult.rows.length === 0) {
-            throw new Error('User not found');
-        }
+            // Get user details for email (assuming you have a users table)
+            const userResult = await db.query('SELECT username, email, full_name FROM sahil.users WHERE id = $1', [userId]);
+            if (userResult.rows.length === 0) {
+                throw new Error('User not found');
+            }
 
-        const { username, email, full_name: fullName } = userResult.rows[0];
-        console.log(`${email},${fullName}`);
-        
+            const { username, email, full_name: fullName } = userResult.rows[0];
+            console.log(`${email},${fullName}`);
+            
 
-        await sendEmail(
-            email,
-            'Your Order Has Been Placed',
-            `Hello ${fullName},<br><br>
-            We are pleased to inform you that your order with ID <strong>${uniqueOrderId}</strong> has been successfully placed.<br>
-            Please wait for the admin to approve your order!<br><br>
-            If you have any questions or need further assistance, please feel free to contact us.<br><br>
-            Best regards,<br>
-            Your Company Name`
-        );
-
-
-
-        // Get all cart items for the user with product details
-        const cartItemsResult = await db.query(`
-          SELECT cart.id, cart.product_id, cart.quantity, products.name as product_name, products.price
-          FROM sahil.cart cart
-          JOIN sahil.products products ON cart.product_id = products.id
-          WHERE cart.user_id = $1
-        `, [userId]);
-
-        const cartItems = cartItemsResult.rows;
-
-        if (cartItems.length === 0) {
-            throw new Error('No items in the cart');
-        }
-
-        // Insert cart items into order_history with the same unique order ID
-        for (let item of cartItems) {
-            await db.query(
-                'INSERT INTO sahil.order_history (order_id, user_id, quantity, status, created_at, product_id) VALUES ($1, $2, $3, $4, $5, $6)',
-                [uniqueOrderId, userId, item.quantity, 'pending', new Date(), item.product_id]
+            await sendEmail(
+                email,
+                'Order Placed',
+                `Hello ${fullName},<br><br>Your order has been successfully placed.<br>Please wait for the admin to approve your order before logging in.`
             );
+
+
+
+            // Get all cart items for the user with product details
+            const cartItemsResult = await db.query(`
+            SELECT cart.id, cart.product_id, cart.quantity, products.name as product_name, products.price
+            FROM sahil.cart cart
+            JOIN sahil.products products ON cart.product_id = products.id
+            WHERE cart.user_id = $1
+            `, [userId]);
+
+            const cartItems = cartItemsResult.rows;
+
+            if (cartItems.length === 0) {
+                throw new Error('No items in the cart');
+            }
+
+            // Insert cart items into order_history with the same unique order ID
+            for (let item of cartItems) {
+                await db.query(
+                    'INSERT INTO sahil.order_history (order_id, user_id, quantity, status, created_at, product_id) VALUES ($1, $2, $3, $4, $5, $6)',
+                    [uniqueOrderId, userId, item.quantity, 'pending', new Date(), item.product_id]
+                );
+            }
+
+            await db.query('INSERT INTO sahil.cartamount(order_id, total_amount) VALUES($1, $2)', [uniqueOrderId,totalAmount]);
+
+            // Update delivered column to false for the user's cart items
+            await db.query('UPDATE sahil.cart SET delivered = false WHERE user_id = $1', [userId]);
+
+            // Delete cart items after placing the order
+            await db.query('DELETE FROM sahil.cart WHERE user_id = $1', [userId]);
+
+            // Commit transaction
+            await db.query('COMMIT');
+
+            // Prepare email content
+        
+            // Respond with success
+            res.status(200).json({ message: 'Order placed successfully', orderId: uniqueOrderId });
+        } catch (err) {
+            // Rollback transaction in case of error
+            await db.query('ROLLBACK');
+            console.error('Error placing order:', err);
+            res.status(500).json({ error: 'Internal server error' });
         }
-
-        // Update delivered column to false for the user's cart items
-        await db.query('UPDATE sahil.cart SET delivered = false WHERE user_id = $1', [userId]);
-
-        // Delete cart items after placing the order
-        await db.query('DELETE FROM sahil.cart WHERE user_id = $1', [userId]);
-
-        // Commit transaction
-        await db.query('COMMIT');
-
-        // Prepare email content
-       
-        // Respond with success
-        res.status(200).json({ message: 'Order placed successfully', orderId: uniqueOrderId });
-    } catch (err) {
-        // Rollback transaction in case of error
-        await db.query('ROLLBACK');
-        console.error('Error placing order:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+    });
 
 
 
@@ -630,7 +626,11 @@ app.post('/ordercard',(req,res)=>{
     if (!userId) {
        console.log("No user Id availabe")
       }
-      const select = 'SELECT o.order_id, o.user_id, o.product_id, o.quantity, p.photo AS photo, p.name, p.price FROM sahil.order_history o JOIN sahil.products p ON o.product_id = p.id WHERE o.user_id = $1 AND o.status = \'pending\';';
+      const select = `SELECT o.order_id, o.user_id, o.product_id, o.quantity, p.photo AS photo, p.name, p.price, c.total_amount 
+FROM sahil.order_history o 
+JOIN sahil.products p ON o.product_id = p.id 
+JOIN sahil.cartamount c ON o.order_id = c.order_id 
+WHERE o.user_id = $1 AND o.status = 'pending';`;
 
 
     db.query(select,[userId],(err,data)=>{
@@ -671,7 +671,12 @@ app.post('/orderdel', (req, res) => {
 
 app.post('/orderreq',(req,res)=>{
 
-      const select = "SELECT o.order_id, o.user_id, o.product_id, o.quantity, p.photo AS photo, p.name, p.price FROM sahil.order_history o JOIN sahil.products p ON o.product_id = p.id where status = 'pending' "
+      const select = `
+SELECT o.order_id, o.user_id, o.product_id, o.quantity, p.photo AS photo, p.name, p.price, c.total_amount as totalamount
+FROM sahil.order_history o 
+JOIN sahil.products p ON o.product_id = p.id 
+JOIN sahil.cartamount c ON o.order_id = c.order_id 
+WHERE  o.status = 'pending';`
 
 
     db.query(select,(err,data)=>{
@@ -722,20 +727,19 @@ app.post('/accept', async (req, res) => {
 
         const { username, email, full_name: fullName } = userResult.rows[0];
         // console.log(`${email},${fullName}`);
+        console.log(fullName);
+        
 
-        // Prepare email content
-        const emailSubject = 'Your Order Has Been Approved';
-        const emailBody = `
-            Hello ${fullName},<br><br>
-            We are pleased to inform you that your order with ID ${orderId} has been approved.<br>
-            Thank you for your purchase!<br>
-            If you have any questions or need further assistance, please feel free to contact us.<br><br>
-            Best regards,<br>
-            Your Company Name
-        `;
+
 
         // Send email to the user notifying them about their order approval
-        await sendEmail(email, emailSubject, emailBody);
+        await sendEmail(
+            email,
+            'Your Order Has Been Approved',
+            `Hello ${fullName},<br><br>
+            We are pleased to inform you that your order with ID ${orderId} has been approved.<br>
+            Thank you for your purchase!<br>`
+        );
 
         // Respond with success message
         return res.status(200).json({ message: "Order has been approved and user notified" });
@@ -776,20 +780,15 @@ app.post('/cancel', async (req, res) => {
 
         const { username, email, full_name: fullName } = userResult.rows[0];
         // console.log(`${email},${fullName}`);
-        
 
-        // Prepare email content
-        const emailSubject = 'Your Order Has Been Canceled';
-        const emailBody = `
-            Hello ${fullName},<br><br>
-            We regret to inform you that your order with ID ${orderId} has been canceled.<br>
-            If you have any questions or concerns, please feel free to contact us.<br><br>
-            Best regards,<br>
-            Your Company Name
-        `;
 
         // Send email to the user notifying them about their order cancellation
-        await sendEmail(email, emailSubject, emailBody);
+        await sendEmail(
+            email,
+           'Your Order Has Been Canceled',
+            ` Hello ${fullName},<br><br>
+            We regret to inform you that your order with ID ${orderId} has been canceled.<br>`
+        );
 
         // Delete the products associated with the canceled order
         const deleteProductsQuery = "DELETE FROM sahil.order_history WHERE user_id = $1 and status= 'canceled'";
@@ -1110,7 +1109,7 @@ app.post('/cartCount', async (req, res) => {
     console.log("User ID received:", userId); // Log the user ID
 
     try {
-        const result = await db.query(`SELECT COUNT(*) AS itemcount FROM sahil.cart WHERE user_id = $1`, [userId]);
+        const result = await db.query(`SELECT SUM(quantity) AS itemcount FROM sahil.cart WHERE user_id = $1`, [userId]);
         
         console.log("Query Result:", result); // Log the entire result
 
@@ -1218,6 +1217,11 @@ app.post('/submit-rating', async (req, res) => {
   
         // Insert rating into sahil.order_history table
         await db.query('UPDATE sahil.order_history SET rating = $1 WHERE id = $2', [rating, orderId]);
+
+        await db.query(
+            'INSERT INTO sahil.user_product_ratings (user_id, product_id, order_id, rating, created_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)',
+            [userId, product_id, orderId, rating]
+        );
   
         // Fetch current rating and rating count from sahil.products
         const productResult = await db.query('SELECT rating, rating_count FROM sahil.products WHERE id = $1', [product_id]);
@@ -1239,6 +1243,100 @@ app.post('/submit-rating', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+
+app.get('/api/users',async (req, res) => {
+    try {
+      const result = await db.query(`
+        SELECT DISTINCT u.id, u.username 
+        FROM sahil.users u
+        JOIN sahil.order_history oh ON u.id = oh.user_id
+      `);
+      res.json(result.rows);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Server Error');
+    }
+  })
+
+  app.get('/api/orders', async (req, res) => {
+    const { userId, date, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+
+    let query = `
+        SELECT oh.*, u.username
+        FROM sahil.order_history oh
+        LEFT JOIN sahil.users u ON oh.user_id = u.id
+        WHERE 1=1
+    `;
+
+    const values = [];
+    if (userId) {
+        query += ` AND oh.user_id = $${values.length + 1}`;
+        values.push(userId);
+    }
+    if (date) {
+        query += ` AND DATE(oh.created_at) = $${values.length + 1}`;
+        values.push(date);
+    }
+
+    query += ` ORDER BY oh.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
+    values.push(limit, offset);
+
+    try {
+        const { rows } = await db.query(query, values);
+        
+        // Count query
+        const totalQuery = `
+            SELECT COUNT(*) 
+            FROM sahil.order_history oh
+            WHERE 1=1
+            ${userId ? `AND oh.user_id = $1` : ''}
+            ${date ? `AND DATE(oh.created_at) = $${userId ? 2 : 1}` : ''}
+        `;
+        
+        const totalValues = [];
+        if (userId) totalValues.push(userId);
+        if (date) totalValues.push(date);
+
+        const total = await db.query(totalQuery, totalValues);
+        const totalOrders = total.rows[0].count;
+
+        res.json({ orders: rows, totalOrders });
+    } catch (error) {
+        console.error('Error fetching order history:', error);
+        res.status(500).send('Server Error');
+    }
+});
+
+app.get('/rate', async (req, res) => {
+    const { pid } = req.query; 
+    console.log(`Pid is ${pid}`);
+
+    if (!pid) {
+        return res.status(400).json({ error: 'Product ID is required' });
+    }
+
+    try {
+        const query = `
+            SELECT u.user_id, u.product_id, u.order_id, u.rating, us.username 
+            FROM sahil.user_product_ratings AS u 
+            JOIN sahil.users AS us ON u.user_id = us.id 
+            WHERE u.product_id = $1
+        `;
+        const result = await db.query(query, [pid]);
+
+        if (result.rows.length > 0) {
+            return res.status(200).json(result.rows);
+        } else {
+            return res.status(404).json({ message: 'No ratings found for this product' });
+        }
+    } catch (error) {
+        console.error('Error fetching ratings:', error);
+        return res.status(500).json({ error: 'Server error' });
+    }
+});
+
+
 
 
 app.listen(8004, () => {console.log('Listening on port 8004');
